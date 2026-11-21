@@ -156,12 +156,12 @@ private fun TabItem(t: Tab, on: Boolean, modifier: Modifier, onClick: () -> Unit
         if (t.icon != null) {
             Icon(t.icon, t.label, tint = content, modifier = Modifier.size(22.dp))
         } else {
-            // Gençlik Kolları logosu (komplett). Ausgewählt: einfarbig dunkel auf Gold.
+            // Gençlik Kolları logosu, einfarbig wie die anderen Menü-Icons.
             Image(
                 painterResource(R.drawable.logo_genclik), t.label,
                 contentScale = ContentScale.Fit,
-                colorFilter = if (on) ColorFilter.tint(Bg) else null,
-                modifier = Modifier.fillMaxWidth().height(22.dp)
+                colorFilter = ColorFilter.tint(content),
+                modifier = Modifier.fillMaxWidth(0.82f).height(17.dp).padding(top = 3.dp, bottom = 1.dp)
             )
         }
         Text(
