@@ -307,6 +307,7 @@ private fun PrayerCell(key: String, time: String, past: Boolean, active: Boolean
 // ---------- UI-Zustand für Overlays ----------
 
 object Ui {
+    var openTab by mutableStateOf<Int?>(null)
     var compose by mutableStateOf<String?>(null)
     var admin by mutableStateOf(false)
 }
@@ -754,7 +755,7 @@ fun HakkimizdaPage() {
                 modifier = Modifier.padding(top = 2.dp)
             )
             Text(
-                "Sürüm 0.4",
+                "Sürüm 0.5",
                 style = TextStyle(fontFamily = Manrope, fontSize = 11.sp, color = Muted.copy(alpha = 0.5f)),
                 modifier = Modifier.padding(top = 10.dp)
             )

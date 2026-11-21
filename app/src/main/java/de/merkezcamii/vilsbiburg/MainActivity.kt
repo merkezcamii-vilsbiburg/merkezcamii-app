@@ -65,12 +65,23 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         AppState.init(applicationContext)
-        setContent { App() }
+        handleIntent(intent)
+        setContent { AppRoot() }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(i: android.content.Intent?) {
+        val t = i?.getIntExtra("tab", -1) ?: -1
+        if (t in 0..3) Ui.openTab = t
     }
 }
 
 @Composable
-fun App() {
+fun AppRoot() {
     var splashDone by rememberSaveable { mutableStateOf(false) }
     Box(Modifier.fillMaxSize().background(Bg)) {
         AnimatedContent(
@@ -95,6 +106,20 @@ private val TABS = listOf(
 @Composable
 fun MainScreen() {
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    // Aus Benachrichtigung geöffnet → passenden Tab zeigen
+    LaunchedEffect(Ui.openTab) {
+        Ui.openTab?.let { tab = it; Ui.openTab = null; AppState.refresh() }
+    }
+    // Android 13+: Erlaubnis für Benachrichtigungen
+    val permLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { }
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            delay(1200)
+            permLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     BackHandler(enabled = tab != 0 && Ui.compose == null && !Ui.admin) { tab = 0 }
 
     // Daten laden: Duyurular/Kilitler alle 30 s, Maçlar alle 2 min

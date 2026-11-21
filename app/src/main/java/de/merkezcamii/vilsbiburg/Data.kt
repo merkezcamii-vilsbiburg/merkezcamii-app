@@ -101,16 +101,22 @@ object Backend {
         return txt
     }
 
-    /** Lädt ein Foto in den öffentlichen Bucket "photos" und gibt die öffentliche Adresse zurück. */
-    fun upload(bytes: ByteArray): String {
-        val name = "${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(8)}.jpg"
-        val c = open("${Config.SUPABASE_URL}/storage/v1/object/photos/$name", "POST")
+    /** Foto über die geschützte Funktion "upload" hochladen (PIN wird geprüft). */
+    fun upload(pin: String, bytes: ByteArray): String {
+        val c = open("${Config.SUPABASE_URL}/functions/v1/upload", "POST")
         c.doOutput = true
-        c.setRequestProperty("Content-Type", "image/jpeg")
-        c.setRequestProperty("x-upsert", "false")
-        c.outputStream.use { it.write(bytes) }
-        try { readAll(c) } finally { c.disconnect() }
-        return "${Config.SUPABASE_URL}/storage/v1/object/public/photos/$name"
+        c.connectTimeout = 15_000
+        c.readTimeout = 60_000
+        c.setRequestProperty("Content-Type", "application/json")
+        val payload = JSONObject()
+            .put("pin", pin)
+            .put("image", android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP))
+        c.outputStream.use { it.write(payload.toString().toByteArray()) }
+        val txt = try { readAll(c) } finally { c.disconnect() }
+        val o = JSONObject(txt)
+        val err = o.optString("error", "")
+        if (err.isNotBlank()) throw ApiError(err)
+        return o.getString("url")
     }
 
     fun getUrl(url: String): String {
@@ -244,8 +250,30 @@ object AppState {
         if (seenLokal < 0) markSeen("lokal")
     }
 
+    private var adminChecked = false
+
+    /** Beim Start prüfen, ob der gespeicherte PIN noch gültig ist (z. B. gelöscht). */
+    private suspend fun revalidateAdmin() {
+        if (adminChecked || Config.demo) return
+        val pin = adminPin ?: run { adminChecked = true; return }
+        try {
+            val txt = withContext(Dispatchers.IO) { Backend.rpc("admin_login", JSONObject().put("p_pin", pin)) }
+            val o = JSONObject(txt)
+            val arr = o.optJSONArray("roles") ?: JSONArray()
+            val roles = (0 until arr.length()).map { arr.getString(it) }.toSet()
+            adminName = o.optString("name", adminName ?: ""); adminRoles = roles
+            prefs.edit().putString("adminName", adminName).putStringSet("roles", roles).apply()
+            adminChecked = true
+        } catch (e: ApiError) {
+            logout(); adminChecked = true
+        } catch (e: Exception) {
+            // kein Internet: später erneut versuchen
+        }
+    }
+
     suspend fun refresh() {
         if (Config.demo) { loaded = true; initSeenIfNeeded(); return }
+        revalidateAdmin()
         try {
             val (anns, lk) = withContext(Dispatchers.IO) {
                 val a = JSONArray(Backend.get("announcements?select=*&deleted=eq.false&order=created_at.desc&limit=60"))
@@ -387,7 +415,7 @@ object AppState {
         }
         try {
             withContext(Dispatchers.IO) {
-                val url = photo?.let { Backend.upload(it) }
+                val url = photo?.let { Backend.upload(adminPin ?: "", it) }
                 Backend.rpc(
                     "post_announcement",
                     JSONObject()
@@ -429,7 +457,8 @@ object AppState {
                         .put("p_pin", adminPin)
                         .put("p_match_id", m.id)
                         .put("p_open", open)
-                        .put("p_label", "${m.home.name} - ${m.away.name}")
+                        .put("p_label", "${m.home.name} – ${m.away.name}")
+                        .put("p_kickoff", m.date.toString())
                 )
             }
         } catch (e: Exception) {
