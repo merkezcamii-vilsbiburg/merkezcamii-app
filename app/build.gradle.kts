@@ -12,8 +12,8 @@ android {
         applicationId = "de.merkezcamii.vilsbiburg"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3-demo"
+        versionCode = 4
+        versionName = "0.4"
     }
 
     signingConfigs {
@@ -52,4 +52,5 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 }

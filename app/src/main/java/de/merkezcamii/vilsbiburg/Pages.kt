@@ -41,9 +41,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -303,39 +304,88 @@ private fun PrayerCell(key: String, time: String, past: Boolean, active: Boolean
     }
 }
 
+// ---------- UI-Zustand für Overlays ----------
+
+object Ui {
+    var compose by mutableStateOf<String?>(null)
+    var admin by mutableStateOf(false)
+}
+
+private val agoFmt = DateTimeFormatter.ofPattern("d MMMM, HH:mm", Prayer.TR).withZone(Prayer.ZONE)
+
+private fun whenText(i: Instant): String {
+    val d = i.atZone(Prayer.ZONE).toLocalDate()
+    val today = LocalDate.now(Prayer.ZONE)
+    val hm = Prayer.fmt(i)
+    return when (d) {
+        today -> "Bugün · $hm"
+        today.minusDays(1) -> "Dün · $hm"
+        else -> agoFmt.format(i)
+    }
+}
+
+@Composable
+private fun WriteButton(label: String, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(GoldGradient)
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text("＋  $label", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Bg))
+    }
+}
+
+@Composable
+private fun EmptyNote(t: String) {
+    Text(
+        t,
+        style = TextStyle(fontFamily = Manrope, fontSize = 14.sp, color = Muted, textAlign = TextAlign.Center),
+        modifier = Modifier.fillMaxWidth().glass(RoundedCornerShape(20.dp), elevated = false).padding(vertical = 26.dp, horizontal = 16.dp)
+    )
+}
+
+@Composable
+private fun AnnList(section: String) {
+    val list = AppState.list(section)
+    if (!AppState.loaded) {
+        EmptyNote("Yükleniyor…")
+    } else if (list.isEmpty()) {
+        EmptyNote(if (section == "cami") "Henüz duyuru yok." else "Henüz gençlik duyurusu yok.")
+    }
+    list.forEachIndexed { i, a ->
+        FadeUp(minOf(i, 4) * 80) { AnnCard(a) }
+        Spacer(Modifier.height(12.dp))
+    }
+}
+
 // ---------- 2) Duyurular ----------
-
-private data class News(val day: String, val title: String, val text: String, val photo: String? = null)
-
-private val NEWS = listOf(
-    News(
-        "Cumartesi", "Hayır çarşısı (Kermes)",
-        "Cumartesi günü camimizin bahçesinde hayır çarşımız var. Gözlemeler, tatlılar ve çay sizi bekliyor. Tüm cemaatimiz ailesiyle davetlidir.",
-        photo = "Kermes"
-    ),
-    News("Her Cuma", "Cuma Namazı", "Cuma namazına tüm cemaatimiz davetlidir. Hutbe öğle vaktinde başlar."),
-    News(
-        "Hafta sonu", "Çocuklar için Kuran kursu",
-        "Cumartesi ve pazar günleri çocuklarımız için Kuran ve din dersi verilmektedir. Kayıt için cami yönetimine başvurabilirsiniz."
-    ),
-    News("Duyuru", "Cemaat sohbeti", "Yatsı namazından sonra camimizde sohbet düzenlenecektir. Herkes davetlidir."),
-)
 
 @Composable
 fun DuyurularPage() {
     PageColumn {
         SectionHead("Duyurular", "Güncel")
-        NEWS.forEachIndexed { i, n ->
-            FadeUp(i * 90) { NewsCard(n) }
-            Spacer(Modifier.height(12.dp))
+        if (AppState.isAdmin("cami")) {
+            WriteButton("Duyuru yaz") { Ui.compose = "cami" }
+            Spacer(Modifier.height(14.dp))
         }
+        AnnList("cami")
     }
 }
 
 @Composable
-private fun NewsCard(n: News) {
+private fun AnnCard(a: Ann) {
+    val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
+    var confirm by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(20.dp))) {
-        if (n.photo != null) DemoPhoto(n.photo)
+        if (a.photo != null) {
+            RemoteImage(a.photo, Modifier.fillMaxWidth().aspectRatio(16f / 10f))
+        }
         Box(Modifier.fillMaxWidth()) {
             Box(
                 Modifier
@@ -345,112 +395,71 @@ private fun NewsCard(n: News) {
                     .clip(RoundedCornerShape(3.dp))
                     .background(Brush.verticalGradient(listOf(Gold, Color.Transparent)))
             )
-            Column(Modifier.padding(start = 20.dp, end = 18.dp, top = 18.dp, bottom = 18.dp)) {
+            Column(Modifier.padding(start = 20.dp, end = 18.dp, top = 18.dp, bottom = 16.dp)) {
                 Text(
-                    n.day.uppercase(Prayer.TR),
-                    style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Gold, letterSpacing = 1.8.sp)
+                    whenText(a.createdAt).uppercase(Prayer.TR),
+                    style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Gold, letterSpacing = 1.6.sp)
                 )
-                Row(Modifier.padding(top = 5.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (a.title.isNotBlank()) {
                     Text(
-                        n.title,
+                        a.title,
                         style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = TextC),
-                        modifier = Modifier.weight(1f, fill = false)
+                        modifier = Modifier.padding(top = 5.dp, bottom = 4.dp)
                     )
-                    Spacer(Modifier.width(8.dp))
-                    DemoTag()
                 }
-                Text(n.text, style = TextStyle(fontFamily = Manrope, fontSize = 15.sp, color = Muted, lineHeight = 22.sp))
+                Text(a.body, style = TextStyle(fontFamily = Manrope, fontSize = 15.sp, color = Muted, lineHeight = 22.sp))
+                if (AppState.isAdmin(a.section)) {
+                    Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Yayınlayan: ${a.author ?: "-"}",
+                            style = TextStyle(fontFamily = Manrope, fontSize = 12.sp, color = Muted.copy(alpha = 0.7f)),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            if (confirm) "Emin misiniz? SİL" else "Sil",
+                            style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ClosedRed),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    if (!confirm) confirm = true
+                                    else scope.launch {
+                                        try { AppState.delete(a) } catch (e: Exception) {
+                                            Toast.makeText(ctx, "Silinemedi: ${e.message}", Toast.LENGTH_LONG).show()
+                                        }
+                                        confirm = false
+                                    }
+                                }
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
+                }
             }
-        }
-    }
-}
-
-/** Platzhalter-"Foto" im Design der App (im echten Betrieb: Foto vom Verwalter). */
-@Composable
-private fun DemoPhoto(caption: String) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .aspectRatio(16f / 8.5f)
-            .background(
-                Brush.linearGradient(listOf(Color(0xFF1B4D3A), Color(0xFF0B2A20), Color(0xFF3A2E14)))
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val step = 34.dp.toPx()
-            var x = -size.height
-            while (x < size.width) {
-                drawLine(Gold.copy(alpha = 0.08f), Offset(x, size.height), Offset(x + size.height, 0f), 1.dp.toPx())
-                x += step
-            }
-            drawCircle(
-                Brush.radialGradient(listOf(Gold.copy(alpha = 0.30f), Color.Transparent), center = Offset(size.width * 0.7f, size.height * 0.3f), radius = size.width * 0.5f),
-                radius = size.width * 0.5f, center = Offset(size.width * 0.7f, size.height * 0.3f)
-            )
-        }
-        Image(
-            painterResource(R.drawable.logo_dome), null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxWidth(0.5f).graphicsLayer { alpha = 0.22f }
-        )
-        Row(
-            Modifier
-                .align(Alignment.BottomStart)
-                .padding(12.dp)
-                .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
-                .padding(horizontal = 10.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Camera, null, tint = Gold, modifier = Modifier.size(15.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Örnek fotoğraf · $caption", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = TextC))
         }
     }
 }
 
 // ---------- 3) Lokal ----------
 
-private class Match(
-    val id: Int, val dayOffset: Long, val time: String, val league: String,
-    val home: String, val away: String, val homeTr: Boolean, val awayTr: Boolean, open: Boolean
-) {
-    var open by mutableStateOf(open)
-    val turkish get() = homeTr || awayTr
-}
-
-private val ACTIVITIES = listOf(
-    News("Her Pazar", "Halı saha maçı", "Pazar günleri öğleden sonra gençlerimizle halı sahada buluşuyoruz. Katılmak isteyen herkes gelebilir."),
-    News("Cuma akşamı", "Gençlik sohbeti", "Yatsı namazından sonra lokalimizde çay eşliğinde gençlik sohbeti."),
-    News("Ayın sonu", "PlayStation turnuvası", "Lokalimizde FIFA turnuvası düzenliyoruz. Kayıt lokalde yapılır."),
-)
-
 @Composable
 fun LokalPage() {
     val ctx = LocalContext.current
-    val matches = remember {
-        mutableStateListOf(
-            Match(1, 0, "19:00", "sl", "Galatasaray", "Fenerbahçe", true, true, true),
-            Match(2, 0, "21:45", "sl", "Beşiktaş", "Trabzonspor", true, true, false),
-            Match(3, 1, "16:00", "sl", "Samsunspor", "Göztepe", true, true, false),
-            Match(4, 1, "19:00", "sl", "Başakşehir", "Kasımpaşa", true, true, false),
-            Match(5, 3, "21:00", "cl", "Bayern München", "Galatasaray", false, true, true),
-            Match(6, 3, "21:00", "cl", "Arsenal", "PSV", false, false, false),
-            Match(7, 4, "18:45", "cl", "Real Madrid", "Juventus", false, false, false),
-        )
-    }
+    val scope = rememberCoroutineScope()
+    val lokalAdmin = AppState.isAdmin("lokal")
     var filter by remember { mutableStateOf("all") }
-    val shown = matches.filter {
+    var showAll by remember { mutableStateOf(false) }
+    val shown = AppState.matches.filter {
+        val open = AppState.locks[it.id] == true
         when (filter) {
-            "tr" -> it.turkish
+            "tr" -> AppState.isTurkish(it)
             "sl" -> it.league == "sl"
             "cl" -> it.league == "cl"
-            "open" -> it.open
+            "open" -> open
             else -> true
         }
     }
-    val today = LocalDate.now(Prayer.ZONE)
+    val limited = if (showAll) shown else shown.take(12)
     val dayFmt = DateTimeFormatter.ofPattern("d MMMM EEEE", Prayer.TR)
+    val today = LocalDate.now(Prayer.ZONE)
 
     PageColumn {
         FadeUp {
@@ -464,33 +473,40 @@ fun LokalPage() {
                 GoldDivider()
             }
         }
+
+        SectionHead("Gençlik", "Duyurular", top = 22)
+        if (lokalAdmin) {
+            WriteButton("Gençlik duyurusu yaz") { Ui.compose = "lokal" }
+            Spacer(Modifier.height(14.dp))
+        }
+        AnnList("lokal")
+
         SectionHead("Lokal · Maçlar", "Süper Lig · ŞL", top = 22)
-        FadeUp(100) {
-            Row(
-                Modifier.fillMaxWidth().glass(RoundedCornerShape(22.dp)).padding(horizontal = 18.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            Modifier.fillMaxWidth().glass(RoundedCornerShape(22.dp)).padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Gold.copy(alpha = 0.12f))
+                    .border(1.dp, Line, RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Gold.copy(alpha = 0.12f))
-                        .border(1.dp, Line, RoundedCornerShape(14.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Ball, null, tint = Gold, modifier = Modifier.size(24.dp))
-                }
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text(
-                        "Maçları gençlerimizle birlikte lokalimizde izliyoruz. Yeşil kilitli maçlarda lokal açık.",
-                        style = TextStyle(fontFamily = Manrope, fontSize = 13.5.sp, color = Muted, lineHeight = 19.sp)
-                    )
-                    Row(Modifier.padding(top = 6.dp)) {
-                        Text("🔓 Açık", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = OpenGreen))
-                        Spacer(Modifier.width(14.dp))
-                        Text("🔒 Kapalı", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ClosedRed))
-                    }
+                Icon(Icons.Ball, null, tint = Gold, modifier = Modifier.size(24.dp))
+            }
+            Spacer(Modifier.width(14.dp))
+            Column {
+                Text(
+                    if (lokalAdmin) "Yönetici: kilide dokunarak lokali açın veya kapatın."
+                    else "Maçları gençlerimizle birlikte lokalimizde izliyoruz. Yeşil kilitli maçlarda lokal açık.",
+                    style = TextStyle(fontFamily = Manrope, fontSize = 13.5.sp, color = Muted, lineHeight = 19.sp)
+                )
+                Row(Modifier.padding(top = 6.dp)) {
+                    Text("🔓 Açık", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = OpenGreen))
+                    Spacer(Modifier.width(14.dp))
+                    Text("🔒 Kapalı", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ClosedRed))
                 }
             }
         }
@@ -499,49 +515,62 @@ fun LokalPage() {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             listOf("all" to "Tümü", "tr" to "Türk takımları", "sl" to "Süper Lig", "cl" to "Şampiyonlar Ligi", "open" to "🔓 Lokal açık")
-                .forEach { (k, l) -> Chip(l, filter == k) { filter = k } }
+                .forEach { (k, l) -> Chip(l, filter == k) { filter = k; showAll = false } }
         }
-        if (shown.isEmpty()) {
-            Text(
-                "Bu filtrede maç yok.",
-                style = TextStyle(fontFamily = Manrope, fontSize = 14.sp, color = Muted, textAlign = TextAlign.Center),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 26.dp)
-            )
+        when {
+            AppState.matchesLoading && AppState.matches.isEmpty() -> EmptyNote("Maçlar yükleniyor…")
+            AppState.matchesError != null && AppState.matches.isEmpty() -> EmptyNote(AppState.matchesError!!)
+            shown.isEmpty() -> EmptyNote(if (filter == "open") "Şu an lokal açık olarak işaretlenmiş maç yok." else "Önümüzdeki günlerde maç bulunamadı.")
         }
-        shown.groupBy { it.dayOffset }.toSortedMap().forEach { (off, list) ->
-            val d = today.plusDays(off)
-            val title = when (off) {
-                0L -> "Bugün · " + dayFmt.format(d)
-                1L -> "Yarın · " + dayFmt.format(d)
-                else -> dayFmt.format(d)
+        var last: LocalDate? = null
+        limited.forEach { m ->
+            val d = m.date.atZone(Prayer.ZONE).toLocalDate()
+            if (d != last) {
+                last = d
+                val title = when (d) {
+                    today -> "Bugün"
+                    today.plusDays(1) -> "Yarın"
+                    else -> dayFmt.format(d)
+                }
+                Text(
+                    title.uppercase(Prayer.TR),
+                    style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Gold, letterSpacing = 2.sp),
+                    modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 8.dp)
+                )
             }
-            Text(
-                title.uppercase(Prayer.TR),
-                style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Gold, letterSpacing = 2.sp),
-                modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 8.dp)
-            )
-            list.forEach { m ->
-                MatchRow(m) {
-                    m.open = !m.open
+            val open = AppState.locks[m.id] == true
+            MatchRow(m, open) {
+                if (lokalAdmin) {
+                    scope.launch {
+                        try {
+                            AppState.setLock(m, !open)
+                            Toast.makeText(ctx, if (!open) "🔓 Lokal açıldı" else "🔒 Lokal kapatıldı", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(ctx, "Kaydedilemedi: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else {
                     Toast.makeText(
                         ctx,
-                        if (m.open) "Lokal açık: ${m.home} – ${m.away}" else "Lokal kapalı: ${m.home} – ${m.away}",
+                        if (open) "🔓 Bu maçta lokal açık – herkesi bekliyoruz!" else "🔒 Lokal bu maç için henüz açık değil",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-                Spacer(Modifier.height(8.dp))
             }
+            Spacer(Modifier.height(8.dp))
         }
-        Text(
-            "Demo: kilide dokunarak durumu değiştirebilirsiniz. Gerçek uygulamada bunu sadece yönetici yapar.",
-            style = TextStyle(fontFamily = Manrope, fontSize = 11.5.sp, color = Muted, textAlign = TextAlign.Center),
-            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-        )
-
-        SectionHead("Gençlik", "Etkinlikler", top = 34)
-        ACTIVITIES.forEach { a ->
-            NewsCard(a)
-            Spacer(Modifier.height(12.dp))
+        if (shown.size > limited.size) {
+            Text(
+                "Tüm maçları göster (${shown.size})",
+                style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Gold, textAlign = TextAlign.Center),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .clip(RoundedCornerShape(50))
+                    .border(1.dp, Line, RoundedCornerShape(50))
+                    .clickable { showAll = true }
+                    .padding(vertical = 10.dp)
+            )
         }
     }
 }
@@ -562,9 +591,10 @@ private fun Chip(label: String, on: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun MatchRow(m: Match, onToggle: () -> Unit) {
+private fun MatchRow(m: MatchItem, open: Boolean, onToggle: () -> Unit) {
     val shape = RoundedCornerShape(18.dp)
-    val border by animateColorAsState(if (m.open) OpenGreen.copy(alpha = 0.45f) else Line, tween(300), label = "b")
+    val border by animateColorAsState(if (open) OpenGreen.copy(alpha = 0.45f) else Line, tween(300), label = "b")
+    val tr = AppState.isTurkish(m)
     Row(
         Modifier
             .fillMaxWidth()
@@ -576,7 +606,14 @@ private fun MatchRow(m: Match, onToggle: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.width(60.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(m.time, style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextC))
+            when (m.state) {
+                "in" -> {
+                    Text("CANLI", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, color = OpenGreen))
+                    Text(m.clock, style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = TextC))
+                }
+                "post" -> Text("Bitti", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Muted))
+                else -> Text(Prayer.fmt(m.date), style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextC))
+            }
             val sl = m.league == "sl"
             Text(
                 if (sl) "SÜPER LİG" else "ŞL",
@@ -592,31 +629,36 @@ private fun MatchRow(m: Match, onToggle: () -> Unit) {
         }
         Box(Modifier.width(1.dp).fillMaxHeight().background(Line))
         Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            TeamLine(m.home, m.homeTr)
-            TeamLine(m.away, m.awayTr)
+            TeamLine(m.home, AppState.turkishTeams[m.home.id] == true && tr, m.state != "pre")
+            TeamLine(m.away, AppState.turkishTeams[m.away.id] == true && tr, m.state != "pre")
         }
-        LockButton(m.open, onToggle)
+        LockButton(open, onToggle)
     }
 }
 
 @Composable
-private fun TeamLine(name: String, tr: Boolean) {
+private fun TeamLine(t: Team, tr: Boolean, showScore: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier.size(22.dp).clip(CircleShape).background(Gold.copy(alpha = 0.12f)).border(1.dp, Line, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                name.take(1),
-                style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Gold)
-            )
+        if (t.logo.isNotBlank()) {
+            RemoteImage(t.logo, Modifier.size(22.dp), contentScale = ContentScale.Fit, maxSize = 96)
+        } else {
+            Box(
+                Modifier.size(22.dp).clip(CircleShape).background(Gold.copy(alpha = 0.12f)).border(1.dp, Line, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(t.name.take(1), style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Gold))
+            }
         }
         Spacer(Modifier.width(8.dp))
         Text(
-            if (tr) "$name 🇹🇷" else name,
+            if (tr) "${t.name} 🇹🇷" else t.name,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
-            style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (tr) Color.White else TextC)
+            style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (tr) Color.White else TextC),
+            modifier = Modifier.weight(1f)
         )
+        if (showScore && t.score != null) {
+            Text(t.score, style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = Gold))
+        }
     }
 }
 
@@ -666,9 +708,17 @@ fun HakkimizdaPage() {
                 Modifier.fillMaxWidth().glass().padding(horizontal = 22.dp, vertical = 26.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                var taps by remember { mutableStateOf(0) }
+                var lastTap by remember { mutableStateOf(0L) }
                 Text(
                     "1982",
-                    style = TextStyle(fontFamily = Marcellus, fontSize = 64.sp, brush = GoldGradient, lineHeight = 64.sp)
+                    style = TextStyle(fontFamily = Marcellus, fontSize = 64.sp, brush = GoldGradient, lineHeight = 64.sp),
+                    modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                        val now = System.currentTimeMillis()
+                        taps = if (now - lastTap < 1200) taps + 1 else 1
+                        lastTap = now
+                        if (taps >= 5) { taps = 0; Ui.admin = true }
+                    }
                 )
                 Text(
                     "YILINDAN BERİ HİZMETİNİZDE",
@@ -704,7 +754,7 @@ fun HakkimizdaPage() {
                 modifier = Modifier.padding(top = 2.dp)
             )
             Text(
-                "Demo sürümü 0.3",
+                "Sürüm 0.4",
                 style = TextStyle(fontFamily = Manrope, fontSize = 11.sp, color = Muted.copy(alpha = 0.5f)),
                 modifier = Modifier.padding(top = 10.dp)
             )

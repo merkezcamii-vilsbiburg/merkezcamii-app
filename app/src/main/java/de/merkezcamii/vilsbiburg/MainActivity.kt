@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -35,6 +36,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +64,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(AColor.TRANSPARENT)
         )
         super.onCreate(savedInstanceState)
+        AppState.init(applicationContext)
         setContent { App() }
     }
 }
@@ -91,7 +95,24 @@ private val TABS = listOf(
 @Composable
 fun MainScreen() {
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    BackHandler(enabled = tab != 0) { tab = 0 }
+    BackHandler(enabled = tab != 0 && Ui.compose == null && !Ui.admin) { tab = 0 }
+
+    // Daten laden: Duyurular/Kilitler alle 30 s, Maçlar alle 2 min
+    LaunchedEffect(Unit) {
+        while (true) { AppState.refresh(); delay(30_000) }
+    }
+    LaunchedEffect(Unit) {
+        while (true) { AppState.refreshMatches(); delay(120_000) }
+    }
+    // Gelesen markieren, solange man auf dem Tab ist
+    val camiCount = AppState.announcements.count { it.section == "cami" }
+    val lokalCount = AppState.announcements.count { it.section == "lokal" }
+    LaunchedEffect(tab, camiCount, lokalCount, AppState.loaded) {
+        if (!AppState.loaded) return@LaunchedEffect
+        if (tab == 1) AppState.markSeen("cami")
+        if (tab == 2) AppState.markSeen("lokal")
+    }
+    val badges = listOf(0, AppState.unread("cami"), AppState.unread("lokal"), 0)
 
     Box(Modifier.fillMaxSize()) {
         BrandBackground()
@@ -108,12 +129,15 @@ fun MainScreen() {
                 else -> HakkimizdaPage()
             }
         }
-        TabBar(tab, { tab = it }, Modifier.align(Alignment.BottomCenter))
+        TabBar(tab, badges, { tab = it }, Modifier.align(Alignment.BottomCenter))
+
+        Ui.compose?.let { sec -> ComposeScreen(sec) { Ui.compose = null } }
+        if (Ui.admin) AdminGate { Ui.admin = false }
     }
 }
 
 @Composable
-private fun TabBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier) {
+private fun TabBar(selected: Int, badges: List<Int>, onSelect: (Int) -> Unit, modifier: Modifier) {
     var shown by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) { shown = true }
     val appear by animateFloatAsState(if (shown) 1f else 0f, tween(700, delayMillis = 250), label = "bar")
@@ -135,14 +159,14 @@ private fun TabBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier) {
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             TABS.forEachIndexed { i, t ->
-                TabItem(t, i == selected, Modifier.weight(1f)) { onSelect(i) }
+                TabItem(t, i == selected, badges[i], Modifier.weight(1f)) { onSelect(i) }
             }
         }
     }
 }
 
 @Composable
-private fun TabItem(t: Tab, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun TabItem(t: Tab, on: Boolean, badge: Int, modifier: Modifier, onClick: () -> Unit) {
     val content by animateColorAsState(if (on) Bg else Muted, tween(300), label = "c")
     val bgAlpha by animateFloatAsState(if (on) 1f else 0f, tween(300), label = "a")
     Column(
@@ -153,6 +177,7 @@ private fun TabItem(t: Tab, on: Boolean, modifier: Modifier, onClick: () -> Unit
             .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Box(contentAlignment = Alignment.Center) {
         if (t.icon != null) {
             Icon(t.icon, t.label, tint = content, modifier = Modifier.size(22.dp))
         } else {
@@ -163,6 +188,10 @@ private fun TabItem(t: Tab, on: Boolean, modifier: Modifier, onClick: () -> Unit
                 colorFilter = ColorFilter.tint(content),
                 modifier = Modifier.fillMaxWidth(0.82f).height(17.dp).padding(top = 3.dp, bottom = 1.dp)
             )
+        }
+        if (!on && badge > 0) {
+            GoldBadge(badge, Modifier.align(Alignment.TopEnd).offset(x = 14.dp, y = (-6).dp))
+        }
         }
         Text(
             t.label,
