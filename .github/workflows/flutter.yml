@@ -1,0 +1,96 @@
+name: Flutter derle (Android + iOS)
+
+on:
+  push:
+    branches: [main]
+    paths: ['flutter/**', '.github/workflows/flutter.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Proje hazırla
+        working-directory: flutter
+        run: |
+          flutter --version
+          flutter create --platforms=android,ios --org de.merkezcamii --project-name merkezcamii .
+          rm -f test/widget_test.dart
+          python3 tool/patch_platform.py android
+          mkdir -p android/app/src/main/res/raw
+          curl -fsSL -o android/app/src/main/res/raw/ezan_sabah.mp3 "https://cdn.freesound.org/previews/28/28775_5726-hq.mp3" || true
+          curl -fsSL -o android/app/src/main/res/raw/ezan.mp3 "https://cdn.freesound.org/previews/255/255231_4232604-hq.mp3" || true
+
+      - name: APK derle
+        working-directory: flutter
+        run: |
+          set -o pipefail
+          flutter pub get 2>&1 | tee ../build-log.txt
+          flutter build apk --release 2>&1 | tee -a ../build-log.txt
+
+      - name: Sonucu build-flutter dalına yaz
+        if: always()
+        run: |
+          mkdir -p /tmp/out
+          cp build-log.txt /tmp/out/ 2>/dev/null || true
+          cp flutter/build/app/outputs/flutter-apk/app-release.apk /tmp/out/MerkezCamii.apk 2>/dev/null || true
+          echo "${{ job.status }} ${{ github.sha }}" > /tmp/out/STATUS.txt
+          cd /tmp/out
+          git init -q
+          git config user.name "Merkez Camii"
+          git config user.email "noreply@users.noreply.github.com"
+          git checkout -q -b build-flutter
+          git add -A
+          git commit -q -m "Flutter build ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" build-flutter
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Proje hazırla
+        working-directory: flutter
+        run: |
+          flutter create --platforms=android,ios --org de.merkezcamii --project-name merkezcamii .
+          rm -f test/widget_test.dart
+          python3 tool/patch_platform.py ios
+
+      - name: iOS derle (imzasız, sadece kontrol)
+        working-directory: flutter
+        run: |
+          set -o pipefail
+          flutter pub get 2>&1 | tee ../ios-log.txt
+          flutter build ios --release --no-codesign 2>&1 | tee -a ../ios-log.txt
+
+      - name: Sonucu build-ios dalına yaz
+        if: always()
+        run: |
+          mkdir -p /tmp/out
+          cp ios-log.txt /tmp/out/ 2>/dev/null || true
+          echo "${{ job.status }} ${{ github.sha }}" > /tmp/out/STATUS.txt
+          cd /tmp/out
+          git init -q
+          git config user.name "Merkez Camii"
+          git config user.email "noreply@users.noreply.github.com"
+          git checkout -q -b build-ios
+          git add -A
+          git commit -q -m "iOS build ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" build-ios

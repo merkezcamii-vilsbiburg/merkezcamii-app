@@ -1,0 +1,39 @@
+name: merkezcamii
+description: Merkez Camii Vilsbiburg
+publish_to: 'none'
+version: 1.0.0+10
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.3.0
+  flutter_svg: ^2.0.10
+  hijri: ^3.0.0
+  image_picker: ^1.1.2
+  flutter_local_notifications: ^19.0.0
+  timezone: ^0.10.0
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/img/
+  fonts:
+    - family: Marcellus
+      fonts:
+        - asset: assets/fonts/marcellus.ttf
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/manrope.ttf
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/amiri.ttf
