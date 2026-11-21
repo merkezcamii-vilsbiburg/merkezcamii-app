@@ -103,7 +103,6 @@ class _VakitlerPageState extends State<VakitlerPage> {
     final secs = nextT.difference(now).inSeconds.clamp(0, 999999);
     String two(int v) => v.toString().padLeft(2, '0');
     final clock = '${two(secs ~/ 3600)}:${two(secs % 3600 ~/ 60)}:${two(secs % 60)}';
-    final pct = (now.difference(startT).inSeconds / nextT.difference(startT).inSeconds).clamp(0.0, 1.0);
 
     return PageList(children: [
       Padding(
@@ -150,21 +149,7 @@ class _VakitlerPageState extends State<VakitlerPage> {
                       style: manrope(52, w: 700, color: Colors.white, ls: 1)
                           .copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
                 ),
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 6),
-                  height: 4,
-                  decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(4)),
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: pct,
-                    child: Container(
-                      decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [gold2, gold]),
-                          borderRadius: BorderRadius.circular(4)),
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 10),
                 Row(children: [
                   Expanded(child: Text(Prayer.miladi(b), style: manrope(12, color: muted))),
                   Text(Prayer.hicri(b), style: manrope(12, color: muted)),
