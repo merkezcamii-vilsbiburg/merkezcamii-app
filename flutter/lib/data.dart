@@ -133,6 +133,24 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool get lokalOpen => setting('lokal_acik') == '1';
+  DateTime? get lokalSince => DateTime.tryParse(setting('lokal_since'));
+
+  Future<void> setLokalOpen(bool open) async {
+    final before = Map<String, String>.from(settings);
+    settings['lokal_acik'] = open ? '1' : '0';
+    settings['lokal_since'] = DateTime.now().toUtc().toIso8601String();
+    notifyListeners();
+    try {
+      await Backend.rpc('set_lokal_open', {'p_pin': pin, 'p_open': open});
+    } catch (e) {
+      settings = before;
+      notifyListeners();
+      _auth(e);
+      rethrow;
+    }
+  }
+
   Future<void> saveDonation(int? id, String title, double collected, double target) async {
     await Backend.rpc('donation_save',
         {'p_pin': pin, 'p_id': id, 'p_title': title, 'p_collected': collected, 'p_target': target});

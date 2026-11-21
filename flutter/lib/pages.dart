@@ -625,6 +625,8 @@ class _LokalPageState extends State<LokalPage> {
       ],
       ...annList('lokal'),
       sectionHead('Lokal · Maçlar', 'Süper Lig · ŞL', top: 22),
+      _lokalCard(context, lokalAdmin),
+      const SizedBox(height: 12),
       glassBox(
         r: 22,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -700,6 +702,68 @@ class _LokalPageState extends State<LokalPage> {
           ),
         ),
     ]);
+  }
+
+  /// Genel lokal kilidi – maçlardan bağımsız
+  Widget _lokalCard(BuildContext context, bool lokalAdmin) {
+    final open = app.lokalOpen;
+    final c = open ? openGreen : closedRed;
+    final since = app.lokalSince;
+    String sub;
+    if (since != null) {
+      final l = tz.TZDateTime.from(since, Prayer.berlin);
+      final n = Prayer.nowBerlin();
+      final sameDay = l.year == n.year && l.month == n.month && l.day == n.day;
+      sub = sameDay ? '${Prayer.hm(since)}\'den beri' : '${l.day} ${Prayer.months[l.month - 1]}, ${Prayer.hm(since)}\'den beri';
+    } else {
+      sub = '';
+    }
+    if (lokalAdmin) sub = sub.isEmpty ? 'Değiştirmek için dokunun' : '$sub · değiştirmek için dokunun';
+    return GestureDetector(
+      onTap: () async {
+        if (!lokalAdmin) {
+          toast(context, open ? '🔓 Lokal şu an açık – herkesi bekliyoruz!' : '🔒 Lokal şu an kapalı');
+          return;
+        }
+        try {
+          await app.setLokalOpen(!open);
+          if (context.mounted) toast(context, !open ? '🔓 Lokal açıldı' : '🔒 Lokal kapatıldı');
+        } catch (e) {
+          if (context.mounted) toast(context, 'Kaydedilemedi: $e');
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [c.withValues(alpha: 0.16), Colors.white.withValues(alpha: 0.03)]),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: c.withValues(alpha: 0.5)),
+          boxShadow: open ? [BoxShadow(color: openGreen.withValues(alpha: 0.18), blurRadius: 24)] : null,
+        ),
+        child: Row(children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: c.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: c.withValues(alpha: 0.55)),
+            ),
+            alignment: Alignment.center,
+            child: icon(open ? Ic.lockOpen : Ic.lockClosed, size: 30, color: c),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(open ? 'Lokal şu an açık' : 'Lokal şu an kapalı', style: marcellus(21)),
+              if (sub.isNotEmpty)
+                Padding(padding: const EdgeInsets.only(top: 3), child: Text(sub, style: manrope(12.5, color: muted))),
+            ]),
+          ),
+        ]),
+      ),
+    );
   }
 
   Widget _chip(String label, bool on, VoidCallback onTap) => GestureDetector(
@@ -903,7 +967,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Ezan kayıtları: sazman, RJStefanski (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.2', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.3', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 

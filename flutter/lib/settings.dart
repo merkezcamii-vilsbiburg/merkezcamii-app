@@ -292,7 +292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ]),
 
                     const SizedBox(height: 10),
-                    Text('Merkez Camii Vilsbiburg · Sürüm 1.2', textAlign: TextAlign.center, style: manrope(12, color: muted)),
+                    Text('Merkez Camii Vilsbiburg · Sürüm 1.3', textAlign: TextAlign.center, style: manrope(12, color: muted)),
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text('Ezan kayıtları: sazman, RJStefanski (freesound.org, CC BY)',
