@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'admin.dart';
 import 'brand.dart';
 import 'data.dart';
+import 'extras.dart';
+import 'islamic.dart';
 import 'notify.dart';
 import 'pages.dart';
 import 'theme.dart';
@@ -22,6 +24,16 @@ Future<void> main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await AppState.i.init();
+  // Ramazan-/Kurban-Korrektur aus den Einstellungen übernehmen und Bildirimler neu planen
+  String lastKey = '';
+  AppState.i.onSettings = () {
+    final r = AppState.i.setting('ramazan_baslangic'), k = AppState.i.setting('kurban_bayrami');
+    final key = '$r|$k';
+    if (key == lastKey) return;
+    lastKey = key;
+    Islamic.applySettings(r, k);
+    scheduleEzans();
+  };
   await initNotifications((tab) {
     AppState.i.openTab = tab;
     AppState.i.ui();
@@ -144,7 +156,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final overlayOpen = app.compose != null || app.showAdmin || app.showManage;
+    final overlayOpen = app.compose != null || app.showAdmin || app.showManage || app.showInfoEdit || app.showQibla;
     return PopScope(
       canPop: tab == 0 && !overlayOpen,
       onPopInvokedWithResult: (didPop, _) {
@@ -170,6 +182,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           Positioned.fill(
             child: AdminGate(onClose: () {
               app.showAdmin = false;
+              app.ui();
+            }),
+          ),
+        if (app.showInfoEdit)
+          Positioned.fill(
+            child: InfoEditScreen(onClose: () {
+              app.showInfoEdit = false;
+              app.ui();
+            }),
+          ),
+        if (app.showQibla)
+          Positioned.fill(
+            child: QiblaScreen(onClose: () {
+              app.showQibla = false;
               app.ui();
             }),
           ),

@@ -104,6 +104,15 @@ def android():
     </application>"""
     m = must_sub(r"\s*</application>", receivers, m, "receivers")
     m = re.sub(r'android:screenOrientation="[^"]*"', "", m)
+    if "android.intent.action.DIAL" not in m:
+        q = """
+    <queries>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>
+        <intent><action android:name="android.intent.action.DIAL" /><data android:scheme="tel" /></intent>
+        <intent><action android:name="android.intent.action.SENDTO" /><data android:scheme="mailto" /></intent>
+    </queries>
+</manifest>"""
+        m = re.sub(r"</manifest>\s*$", q, m)
     write(mf, m)
 
     # Ressourcen aus der bisherigen App
@@ -151,6 +160,10 @@ def ios():
     plist = os.path.join(ROOT, "ios", "Runner", "Info.plist")
     p = read(plist)
     p = re.sub(r"(<key>CFBundleDisplayName</key>\s*<string>)[^<]*(</string>)", r"\1Merkez Camii\2", p)
+    if "NSLocationWhenInUseUsageDescription" not in p:
+        p = p.replace("<dict>", "<dict>\n\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>Kıble yönünü göstermek için pusula kullanılır.</string>", 1)
+    if "LSApplicationQueriesSchemes" not in p:
+        p = p.replace("<dict>", "<dict>\n\t<key>LSApplicationQueriesSchemes</key>\n\t<array>\n\t\t<string>tel</string>\n\t\t<string>mailto</string>\n\t\t<string>https</string>\n\t</array>", 1)
     if "UIBackgroundModes" not in p:
         p = p.replace("<dict>", "<dict>\n\t<key>UIBackgroundModes</key>\n\t<array>\n\t\t<string>remote-notification</string>\n\t</array>", 1)
     write(plist, p)

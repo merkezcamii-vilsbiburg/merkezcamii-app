@@ -6,6 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import 'brand.dart';
 import 'data.dart';
+import 'extras.dart';
 import 'notify.dart';
 import 'prayer.dart';
 import 'theme.dart';
@@ -117,6 +118,8 @@ class _VakitlerPageState extends State<VakitlerPage> {
       const SizedBox(height: 14),
       Center(child: goldDivider()),
       const SizedBox(height: 24),
+      holyBanner(),
+      ramazanCard(),
       FadeUp(
         delayMs: 150,
         child: glassBox(
@@ -184,6 +187,8 @@ class _VakitlerPageState extends State<VakitlerPage> {
         child: Text('Vilsbiburg için otomatik hesaplanır · Diyanet takviminden 1–2 dk farklı olabilir',
             textAlign: TextAlign.center, style: manrope(11.5, color: muted)),
       ),
+      nextHolyDayLine(),
+      qiblaButton(),
       const EzanSettingsCard(),
     ]);
   }
@@ -848,7 +853,9 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
   DateTime lastTap = DateTime(2000);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(listenable: app, builder: (_, __) => _build(context));
+
+  Widget _build(BuildContext context) {
     final year = Prayer.nowBerlin().year;
     return PageList(children: [
       sectionHead('Hakkımızda', 'Merkez Camii'),
@@ -898,6 +905,8 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
           ]),
         ),
       ),
+      donationsCard(context),
+      contactCard(),
       const SizedBox(height: 44),
       Text('السَّلَامُ عَلَيْكُمْ', textAlign: TextAlign.center, style: amiri(20)),
       const SizedBox(height: 8),
@@ -911,7 +920,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Ezan kayıtları: sazman, RJStefanski (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.0 (Flutter)', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.1', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 

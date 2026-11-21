@@ -11,6 +11,7 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'data.dart';
+import 'islamic.dart';
 import 'prayer.dart';
 
 final FlutterLocalNotificationsPlugin fln = FlutterLocalNotificationsPlugin();
@@ -165,6 +166,45 @@ Future<void> scheduleEzans() async {
         );
       }
     }
+  }
+  await _scheduleHolyDays();
+}
+
+/// Bayram (09:00) und Kandil (Akşam) – automatisch jedes Jahr.
+Future<void> _scheduleHolyDays() async {
+  final now = DateTime.now().toUtc();
+  final list = Islamic.upcoming(Platform.isIOS ? 30 : 45);
+  var id = 5000;
+  for (final h in list) {
+    id++;
+    DateTime whenUtc;
+    String title, body;
+    if (h.isBayram) {
+      whenUtc = tz.TZDateTime(Prayer.berlin, h.date.year, h.date.month, h.date.day, 9).toUtc();
+      title = '${h.name}ınız mübarek olsun 🌙';
+      body = 'Vilsbiburg Merkez Camii olarak ${h.name}ınızı tebrik eder, hayırlara vesile olmasını dileriz.';
+    } else {
+      whenUtc = Prayer.compute(h.date.year, h.date.month, h.date.day)['aksam']!;
+      final isKadir = h.key == 'kadir';
+      title = isKadir ? 'Kadir Geceniz mübarek olsun ✨' : '${h.name}iniz mübarek olsun ✨';
+      body = 'Vilsbiburg Merkez Camii olarak ${isKadir ? 'Kadir Gecenizi' : '${h.name}inizi'} tebrik ederiz.';
+    }
+    if (!whenUtc.isAfter(now)) continue;
+    await _zoned(
+      id,
+      title,
+      body,
+      whenUtc,
+      NotificationDetails(
+        android: AndroidNotificationDetails(_chCami.id, _chCami.name,
+            importance: Importance.high,
+            priority: Priority.high,
+            largeIcon: const DrawableResourceAndroidBitmap('notif_cami'),
+            styleInformation: BigTextStyleInformation(body),
+            color: _gold),
+        iOS: const DarwinNotificationDetails(),
+      ),
+    );
   }
 }
 

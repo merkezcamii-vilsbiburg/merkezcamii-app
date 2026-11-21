@@ -147,6 +147,13 @@ class _AdminGateState extends State<AdminGate> {
           ]),
         ),
         const SizedBox(height: 20),
+        if (app.isAdmin('cami') || app.isAdmin('super')) ...[
+          smallGoldButton('⚙️  Cami bilgileri ve bağış', () {
+            app.showInfoEdit = true;
+            widget.onClose();
+          }),
+          const SizedBox(height: 12),
+        ],
         if (app.isAdmin('super')) ...[
           smallGoldButton('👥  Yöneticileri yönet', () {
             app.showManage = true;

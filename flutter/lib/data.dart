@@ -36,6 +36,13 @@ class MatchItem {
   MatchItem(this.id, this.league, this.date, this.home, this.away, this.state, this.clock);
 }
 
+class Donation {
+  final int id;
+  final String title;
+  final double collected, target;
+  Donation(this.id, this.title, this.collected, this.target);
+}
+
 class AdminEntry {
   final int id;
   final String name;
@@ -99,6 +106,8 @@ class AppState extends ChangeNotifier {
 
   List<Ann> announcements = [];
   Map<String, bool> locks = {};
+  Map<String, String> settings = {};
+  List<Donation> donations = [];
   List<MatchItem> matches = [];
   Set<String> turkishTeams = {};
   bool matchesLoading = true;
@@ -112,10 +121,33 @@ class AppState extends ChangeNotifier {
 
   int seenCami = -1, seenLokal = -1;
 
+  /// Wird aufgerufen, wenn Einstellungen geladen wurden (z. B. Ramazan-Korrektur)
+  void Function()? onSettings;
+
+  String setting(String k) => settings[k] ?? '';
+
+  Future<void> setSetting(String key, String value) async {
+    await Backend.rpc('set_setting', {'p_pin': pin, 'p_key': key, 'p_value': value});
+    settings[key] = value;
+    onSettings?.call();
+    notifyListeners();
+  }
+
+  Future<void> saveDonation(int? id, String title, double collected, double target) async {
+    await Backend.rpc('donation_save',
+        {'p_pin': pin, 'p_id': id, 'p_title': title, 'p_collected': collected, 'p_target': target});
+    await refresh();
+  }
+
+  Future<void> deleteDonation(int id) async {
+    await Backend.rpc('donation_delete', {'p_pin': pin, 'p_id': id});
+    await refresh();
+  }
+
   // UI-Zustand
   int? openTab;
   String? compose;
-  bool showAdmin = false, showManage = false;
+  bool showAdmin = false, showManage = false, showInfoEdit = false, showQibla = false;
 
   Future<void> init() async {
     prefs = await SharedPreferences.getInstance();
@@ -195,6 +227,16 @@ class AppState extends ChangeNotifier {
         );
       }).toList();
       locks = {for (final x in l) x['match_id'] as String: x['open'] == true};
+      try {
+        final st = await Backend.get('settings?select=key,value') as List;
+        settings = {for (final x in st) x['key'] as String: (x['value'] ?? '').toString()};
+        final dn = await Backend.get('donations?select=id,title,collected,target,sort&order=sort.asc,id.asc') as List;
+        donations = dn
+            .map((x) => Donation((x['id'] as num).toInt(), x['title'] as String, (x['collected'] as num).toDouble(),
+                (x['target'] as num).toDouble()))
+            .toList();
+        onSettings?.call();
+      } catch (_) {}
       loaded = true;
       if (seenCami < 0) markSeen('cami');
       if (seenLokal < 0) markSeen('lokal');
