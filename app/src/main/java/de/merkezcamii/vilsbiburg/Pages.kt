@@ -755,7 +755,7 @@ fun HakkimizdaPage() {
                 modifier = Modifier.padding(top = 2.dp)
             )
             Text(
-                "Sürüm 0.5",
+                "Sürüm 0.6",
                 style = TextStyle(fontFamily = Manrope, fontSize = 11.sp, color = Muted.copy(alpha = 0.5f)),
                 modifier = Modifier.padding(top = 10.dp)
             )

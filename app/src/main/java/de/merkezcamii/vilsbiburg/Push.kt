@@ -24,10 +24,10 @@ import java.net.URL
 
 /** Firebase-Daten aus google-services.json (keine Geheimnisse). Leer = Push aus. */
 object FcmConfig {
-    const val APP_ID = ""
-    const val API_KEY = ""
-    const val PROJECT_ID = ""
-    const val SENDER_ID = ""
+    const val APP_ID = "1:1070684966272:android:fdd4e167c1147d0e774565"
+    const val API_KEY = "AIzaSyClcpHPpGBnSdhRWhOhlYnt-lSlSHmJtdQ"
+    const val PROJECT_ID = "merkezcamii"
+    const val SENDER_ID = "1070684966272"
     val enabled get() = APP_ID.isNotEmpty() && API_KEY.isNotEmpty() && PROJECT_ID.isNotEmpty()
 }
 
