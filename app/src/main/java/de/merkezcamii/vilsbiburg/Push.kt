@@ -39,7 +39,9 @@ class App : Application() {
         super.onCreate()
         AppState.init(this)
         createChannels(this)
+        createEzanChannels(this)
         initPush(this)
+        PrayerScheduler.scheduleNext(this)
     }
 }
 

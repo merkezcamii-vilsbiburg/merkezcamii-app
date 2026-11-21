@@ -228,6 +228,8 @@ object AppState {
 
     fun isAdmin(role: String) = role in adminRoles
 
+    fun pin(): String = adminPin ?: ""
+
     fun list(section: String) = announcements.filter { it.section == section }.sortedByDescending { it.createdAt }
 
     private fun maxId(section: String) = announcements.filter { it.section == section }.maxOfOrNull { it.id } ?: 0L

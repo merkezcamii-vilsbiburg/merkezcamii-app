@@ -21,6 +21,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Ezan kayıtlarını indir (freesound.org, CC BY)
+        continue-on-error: true
+        run: |
+          mkdir -p app/src/main/res/raw
+          curl -fsSL -o app/src/main/res/raw/ezan_sabah.mp3 "https://cdn.freesound.org/previews/28/28775_5726-hq.mp3" || rm -f app/src/main/res/raw/ezan_sabah.mp3
+          curl -fsSL -o app/src/main/res/raw/ezan.mp3 "https://cdn.freesound.org/previews/255/255231_4232604-hq.mp3" || rm -f app/src/main/res/raw/ezan.mp3
+          ls -la app/src/main/res/raw || true
+
       - name: APK derle
         id: gradle
         run: |

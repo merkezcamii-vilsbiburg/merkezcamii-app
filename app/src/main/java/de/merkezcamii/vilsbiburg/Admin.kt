@@ -187,6 +187,7 @@ fun AdminGate(onClose: () -> Unit) {
                     Text("Giriş yapıldı", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Gold, letterSpacing = 2.sp))
                     Text(name, style = TextStyle(fontFamily = Marcellus, fontSize = 28.sp, color = TextC), modifier = Modifier.padding(top = 6.dp))
                     val roles = buildList {
+                        if (AppState.isAdmin("super")) add("Ana yönetici")
                         if (AppState.isAdmin("cami")) add("Cami duyuruları")
                         if (AppState.isAdmin("lokal")) add("Lokal (duyurular ve kilitler)")
                     }
@@ -198,6 +199,10 @@ fun AdminGate(onClose: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(20.dp))
+                if (AppState.isAdmin("super")) {
+                    SmallGoldButton("👥  Yöneticileri yönet") { Ui.manage = true; onClose() }
+                    Spacer(Modifier.height(12.dp))
+                }
                 SmallGoldButton("Tamam") { onClose() }
                 Spacer(Modifier.height(12.dp))
                 Text(

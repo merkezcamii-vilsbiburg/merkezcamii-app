@@ -260,6 +260,7 @@ fun VakitlerPage() {
             style = TextStyle(fontFamily = Manrope, fontSize = 11.5.sp, color = Muted, textAlign = TextAlign.Center),
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
         )
+        EzanSettingsCard()
     }
 }
 
@@ -310,6 +311,7 @@ object Ui {
     var openTab by mutableStateOf<Int?>(null)
     var compose by mutableStateOf<String?>(null)
     var admin by mutableStateOf(false)
+    var manage by mutableStateOf(false)
 }
 
 private val agoFmt = DateTimeFormatter.ofPattern("d MMMM, HH:mm", Prayer.TR).withZone(Prayer.ZONE)
@@ -755,7 +757,12 @@ fun HakkimizdaPage() {
                 modifier = Modifier.padding(top = 2.dp)
             )
             Text(
-                "Sürüm 0.6",
+                "Ezan kayıtları: sazman, RJStefanski (freesound.org, CC BY)",
+                style = TextStyle(fontFamily = Manrope, fontSize = 10.5.sp, color = Muted.copy(alpha = 0.5f), textAlign = TextAlign.Center),
+                modifier = Modifier.padding(top = 10.dp)
+            )
+            Text(
+                "Sürüm 0.7",
                 style = TextStyle(fontFamily = Manrope, fontSize = 11.sp, color = Muted.copy(alpha = 0.5f)),
                 modifier = Modifier.padding(top = 10.dp)
             )
@@ -778,3 +785,94 @@ private fun Stat(big: String, small: String, modifier: Modifier) {
     }
 }
 
+
+// ---------- Ezan-Einstellungen (unter den Vakitler) ----------
+
+@Composable
+fun EzanSettingsCard() {
+    val ctx = LocalContext.current
+    LaunchedEffect(Unit) { EzanSettings.load(ctx) }
+    var open by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().padding(top = 18.dp).glass(RoundedCornerShape(22.dp))) {
+        Row(
+            Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("🔊", style = TextStyle(fontSize = 18.sp))
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Ezan ve bildirim ayarları", style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextC))
+                val off = EzanSettings.KEYS.count { (EzanSettings.modes[it] ?: "ezan") != "ezan" }
+                Text(
+                    if (off == 0) "Tüm vakitlerde ezan açık" else "Bazı vakitlerde ezan kapalı",
+                    style = TextStyle(fontFamily = Manrope, fontSize = 12.sp, color = Muted)
+                )
+            }
+            Text(if (open) "▲" else "▼", style = TextStyle(fontSize = 13.sp, color = Gold))
+        }
+        if (open) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Line))
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                EzanSettings.KEYS.forEach { k ->
+                    val m = EzanSettings.modes[k] ?: "ezan"
+                    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(EzanSettings.LABELS[k]!!, style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = TextC), modifier = Modifier.width(62.dp))
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            ModeChip("Ezan", m == "ezan", Modifier.weight(1f)) { EzanSettings.setMode(ctx, k, "ezan") }
+                            ModeChip("Bildirim", m == "bildirim", Modifier.weight(1f)) { EzanSettings.setMode(ctx, k, "bildirim") }
+                            ModeChip("Kapalı", m == "kapali", Modifier.weight(1f)) { EzanSettings.setMode(ctx, k, "kapali") }
+                        }
+                    }
+                }
+                Box(Modifier.fillMaxWidth().padding(vertical = 8.dp).height(1.dp).background(Line))
+                ToggleRow("Cuma hatırlatması", "Cuma günü öğleden 45 dk önce", EzanSettings.cuma) { EzanSettings.setCuma(ctx, it) }
+                ToggleRow("Sessiz modda da ezan oku", "Kapalıyken telefon sessizdeyse sadece bildirim gelir", EzanSettings.silentToo) { EzanSettings.setSilentToo(ctx, it) }
+                Text(
+                    "Ezan çalarken bildirimdeki \"Ezanı durdur\" ile susturabilirsiniz.",
+                    style = TextStyle(fontFamily = Manrope, fontSize = 11.5.sp, color = Muted),
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModeChip(label: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    Text(
+        label,
+        maxLines = 1,
+        style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (on) Bg else Muted, textAlign = TextAlign.Center),
+        modifier = modifier
+            .clip(shape)
+            .background(if (on) GoldGradient else Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.04f), Color.White.copy(alpha = 0.04f))))
+            .border(1.dp, if (on) Color.Transparent else Line, shape)
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp)
+    )
+}
+
+@Composable
+private fun ToggleRow(title: String, sub: String, on: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable { onChange(!on) }.padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = TextC))
+            Text(sub, style = TextStyle(fontFamily = Manrope, fontSize = 11.5.sp, color = Muted))
+        }
+        Spacer(Modifier.width(10.dp))
+        Box(
+            Modifier
+                .width(46.dp)
+                .height(26.dp)
+                .clip(RoundedCornerShape(50))
+                .background(if (on) GoldGradient else Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.12f)))),
+            contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart
+        ) {
+            Box(Modifier.padding(3.dp).size(20.dp).clip(CircleShape).background(if (on) Bg else TextC))
+        }
+    }
+}

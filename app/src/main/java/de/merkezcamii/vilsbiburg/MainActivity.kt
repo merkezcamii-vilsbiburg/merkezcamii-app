@@ -120,7 +120,7 @@ fun MainScreen() {
             permLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    BackHandler(enabled = tab != 0 && Ui.compose == null && !Ui.admin) { tab = 0 }
+    BackHandler(enabled = tab != 0 && Ui.compose == null && !Ui.admin && !Ui.manage) { tab = 0 }
 
     // Daten laden: Duyurular/Kilitler alle 30 s, Maçlar alle 2 min
     LaunchedEffect(Unit) {
@@ -158,6 +158,7 @@ fun MainScreen() {
 
         Ui.compose?.let { sec -> ComposeScreen(sec) { Ui.compose = null } }
         if (Ui.admin) AdminGate { Ui.admin = false }
+        if (Ui.manage) ManageScreen { Ui.manage = false }
     }
 }
 
