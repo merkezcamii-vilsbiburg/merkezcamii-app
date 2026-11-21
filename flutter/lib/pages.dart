@@ -9,6 +9,7 @@ import 'data.dart';
 import 'extras.dart';
 import 'notify.dart';
 import 'prayer.dart';
+import 'settings.dart';
 import 'theme.dart';
 
 AppState get app => AppState.i;
@@ -105,7 +106,10 @@ class _VakitlerPageState extends State<VakitlerPage> {
     final pct = (now.difference(startT).inSeconds / nextT.difference(startT).inSeconds).clamp(0.0, 1.0);
 
     return PageList(children: [
-      const SizedBox(height: 22),
+      Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [gearButton()]),
+      ),
       FadeUp(child: Text('بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', textAlign: TextAlign.center, style: amiri(21))),
       const SizedBox(height: 14),
       const Center(child: FractionallySizedBox(widthFactor: 0.66, child: AnimatedLogo(t: 10000))),
@@ -189,7 +193,6 @@ class _VakitlerPageState extends State<VakitlerPage> {
       ),
       nextHolyDayLine(),
       qiblaButton(),
-      const EzanSettingsCard(),
     ]);
   }
 
@@ -920,7 +923,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Ezan kayıtları: sazman, RJStefanski (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.1', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.2', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 

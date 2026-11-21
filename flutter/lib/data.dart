@@ -147,7 +147,7 @@ class AppState extends ChangeNotifier {
   // UI-Zustand
   int? openTab;
   String? compose;
-  bool showAdmin = false, showManage = false, showInfoEdit = false, showQibla = false;
+  bool showAdmin = false, showManage = false, showInfoEdit = false, showQibla = false, showSettings = false;
 
   Future<void> init() async {
     prefs = await SharedPreferences.getInstance();

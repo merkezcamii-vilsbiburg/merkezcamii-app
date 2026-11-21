@@ -226,6 +226,12 @@ Future<void> _zoned(int id, String title, String body, DateTime utc, Notificatio
 Future<void> showPush(Map<String, dynamic> d) async {
   final kind = (d['kind'] ?? '').toString();
   if (kind.isEmpty) return;
+  try {
+    final sp = await SharedPreferences.getInstance();
+    await sp.reload();
+    final topic = kind == 'cami' ? 'cami' : 'lokal';
+    if (!(sp.getBool('push_$topic') ?? true)) return;
+  } catch (_) {}
   final isCami = kind == 'cami';
   final title = (d['title'] ?? '').toString().isEmpty ? (isCami ? 'Merkez Camii' : 'Gençlik Kolları') : d['title'].toString();
   final body = (d['body'] ?? '').toString();
@@ -274,8 +280,14 @@ Future<void> initPush() async {
     await Firebase.initializeApp(options: androidFirebase);
     FirebaseMessaging.onBackgroundMessage(firebaseBackground);
     FirebaseMessaging.onMessage.listen((m) => showPush(m.data));
-    await FirebaseMessaging.instance.subscribeToTopic('cami');
-    await FirebaseMessaging.instance.subscribeToTopic('lokal');
+    final sp = await SharedPreferences.getInstance();
+    for (final t in ['cami', 'lokal']) {
+      if (sp.getBool('push_$t') ?? true) {
+        await FirebaseMessaging.instance.subscribeToTopic(t);
+      } else {
+        await FirebaseMessaging.instance.unsubscribeFromTopic(t);
+      }
+    }
   } catch (e) {
     debugPrint('push: $e');
   }
@@ -283,3 +295,18 @@ Future<void> initPush() async {
 
 /// Wird nach Änderungen der Duyurular im Vordergrund genutzt (nichts zu tun – Platzhalter für iOS-Badges).
 void unusedRef() => AppState.i;
+
+
+/// Duyuru-Bildirimleri für ein Thema an/aus
+Future<void> setTopic(String topic, bool on) async {
+  final sp = await SharedPreferences.getInstance();
+  await sp.setBool('push_$topic', on);
+  if (!Platform.isAndroid) return;
+  try {
+    if (on) {
+      await FirebaseMessaging.instance.subscribeToTopic(topic);
+    } else {
+      await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
+    }
+  } catch (_) {}
+}
