@@ -809,11 +809,6 @@ class MatchRow extends StatelessWidget {
                   alignment: Alignment.center,
                   child: icon(open ? Ic.lockOpen : Ic.lockClosed, size: 22, color: open ? openGreen : closedRed),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 3),
-                  child: Text(open ? 'AÇIK' : 'KAPALI',
-                      style: manrope(9.5, w: 700, color: open ? openGreen : closedRed, ls: 0.5)),
-                ),
               ]),
             ),
           ),

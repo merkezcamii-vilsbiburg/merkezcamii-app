@@ -246,66 +246,41 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- Maçlar ----------
+  // ---------- Maçlar (über Supabase-Funktion, die ESPN Tag für Tag abfragt) ----------
   Future<void> refreshMatches() async {
-    String ymd(DateTime d) =>
-        '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
-    final now = DateTime.now().toUtc();
-    final start = ymd(now.subtract(const Duration(hours: 6)));
-    final end = ymd(now.add(const Duration(days: 14)));
-    final result = <MatchItem>[];
-    var ok = 0;
-    for (final lg in const [
-      ['sl', 'tur.1'],
-      ['cl', 'uefa.champions']
-    ]) {
-      try {
-        final r = await http
-            .get(Uri.parse(
-                'https://site.api.espn.com/apis/site/v2/sports/soccer/${lg[1]}/scoreboard?limit=300&dates=$start-$end'))
-            .timeout(const Duration(seconds: 20));
-        if (r.statusCode != 200) continue;
-        final events = (jsonDecode(r.body)['events'] as List?) ?? [];
-        for (final ev in events) {
-          final comp = (ev['competitions'] as List?)?.first;
-          if (comp == null) continue;
-          final cs = (comp['competitors'] as List?) ?? [];
-          Team side(String h) {
-            for (final x in cs) {
-              if (x['homeAway'] == h) {
-                final t = x['team'] ?? {};
-                final sc = x['score']?.toString();
-                return Team((t['id'] ?? '').toString(), (t['shortDisplayName'] ?? t['displayName'] ?? '?').toString(),
-                    (t['logo'] ?? '').toString(), (sc == null || sc.isEmpty) ? null : sc);
-              }
-            }
-            return Team('', '?', '', null);
-          }
+    try {
+      final r = await http
+          .get(Uri.parse('$supabaseUrl/functions/v1/matches'), headers: Backend._h)
+          .timeout(const Duration(seconds: 40));
+      if (r.statusCode != 200) throw ApiError('HTTP ${r.statusCode}');
+      final list = (jsonDecode(utf8.decode(r.bodyBytes))['matches'] as List?) ?? [];
+      Team team(dynamic t) {
+        final sc = t?['score']?.toString();
+        return Team((t?['id'] ?? '').toString(), (t?['name'] ?? '?').toString(), (t?['logo'] ?? '').toString(),
+            (sc == null || sc.isEmpty || sc == 'null') ? null : sc);
+      }
 
-          final st = ev['status'] ?? {};
-          result.add(MatchItem(
-            (ev['id'] ?? '').toString(),
-            lg[0],
-            DateTime.tryParse((ev['date'] ?? '').toString()) ?? now,
-            side('home'),
-            side('away'),
-            (st['type']?['state'] ?? 'pre').toString(),
-            (st['displayClock'] ?? '').toString(),
-          ));
-        }
-        ok++;
-      } catch (_) {}
-    }
-    if (ok == 0) {
-      if (matches.isEmpty) matchesError = 'Maç listesi şu an yüklenemedi. Lütfen biraz sonra tekrar deneyin.';
-    } else {
-      matchesError = null;
+      final now = DateTime.now().toUtc();
       final cutoff = now.subtract(const Duration(hours: 3));
-      matches = result.where((m) => !(m.state == 'post' && m.date.isBefore(cutoff))).toList()
+      matches = list
+          .map((m) => MatchItem(
+                (m['id'] ?? '').toString(),
+                (m['league'] ?? 'sl').toString(),
+                DateTime.tryParse((m['date'] ?? '').toString()) ?? now,
+                team(m['home']),
+                team(m['away']),
+                (m['state'] ?? 'pre').toString(),
+                (m['clock'] ?? '').toString(),
+              ))
+          .where((m) => !(m.state == 'post' && m.date.isBefore(cutoff)))
+          .toList()
         ..sort((a, b) => a.date.compareTo(b.date));
       turkishTeams = {
         for (final m in matches.where((m) => m.league == 'sl')) ...[m.home.id, m.away.id]
       };
+      matchesError = null;
+    } catch (_) {
+      if (matches.isEmpty) matchesError = 'Maç listesi şu an yüklenemedi. Lütfen biraz sonra tekrar deneyin.';
     }
     matchesLoading = false;
     notifyListeners();
