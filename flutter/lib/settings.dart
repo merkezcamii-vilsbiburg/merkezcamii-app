@@ -82,7 +82,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     try {
       await player.stop();
-      await player.play(UrlSource(ezanUrls[which]!));
+      if (which == 'normal') {
+        await player.play(AssetSource('audio/ezan.mp3'));
+      } else {
+        await player.play(UrlSource(ezanUrls[which]!));
+      }
     } catch (_) {
       if (mounted) {
         toast(context, 'Ezan çalınamadı. İnternet bağlantısını kontrol edin.');
@@ -292,10 +296,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ]),
 
                     const SizedBox(height: 10),
-                    Text('Merkez Camii Vilsbiburg · Sürüm 1.3', textAlign: TextAlign.center, style: manrope(12, color: muted)),
+                    Text('Merkez Camii Vilsbiburg · Sürüm 1.3.1', textAlign: TextAlign.center, style: manrope(12, color: muted)),
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text('Ezan kayıtları: sazman, RJStefanski (freesound.org, CC BY)',
+                      child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
                           textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
                     ),
                   ]),

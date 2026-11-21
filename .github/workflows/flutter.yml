@@ -32,7 +32,6 @@ jobs:
           python3 tool/patch_platform.py android
           mkdir -p android/app/src/main/res/raw
           curl -fsSL -o android/app/src/main/res/raw/ezan_sabah.mp3 "https://cdn.freesound.org/previews/28/28775_5726-hq.mp3" || true
-          curl -fsSL -o android/app/src/main/res/raw/ezan.mp3 "https://cdn.freesound.org/previews/255/255231_4232604-hq.mp3" || true
 
       - name: APK derle
         working-directory: flutter

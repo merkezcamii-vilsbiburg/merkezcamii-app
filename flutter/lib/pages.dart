@@ -964,10 +964,10 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
       ),
       Padding(
         padding: const EdgeInsets.only(top: 10),
-        child: Text('Ezan kayıtları: sazman, RJStefanski (freesound.org, CC BY)',
+        child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.3', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.3.1', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 
