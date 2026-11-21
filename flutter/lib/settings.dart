@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:app_settings/app_settings.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'brand.dart';
@@ -282,12 +282,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     // 5) Hilfe
                     _section('BİLDİRİMLER ÇALIŞMIYORSA', [
-                      _helpRow('🔔', 'Bildirim izni', 'Uygulamanın bildirim göstermesine izin verin',
-                          () => AppSettings.openAppSettings(type: AppSettingsType.notification)),
+                      _helpRow('🔔', 'Bildirim izni', 'Uygulama ayarlarında "Bildirimler"i açın',
+                          () => ph.openAppSettings()),
                       if (Platform.isAndroid) ...[
                         Container(height: 1, color: line),
-                        _helpRow('🔋', 'Pil ayarı', '"Kısıtlanmamış" seçin, ezan ve bildirimler kaçmasın',
-                            () => AppSettings.openAppSettings(type: AppSettingsType.batteryOptimization)),
+                        _helpRow('🔋', 'Pil ayarı', 'Uygulama ayarlarında Pil → "Kısıtlanmamış" seçin',
+                            () => ph.openAppSettings()),
                       ],
                     ]),
 
