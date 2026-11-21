@@ -9,6 +9,7 @@ import 'data.dart';
 import 'extras.dart';
 import 'notify.dart';
 import 'prayer.dart';
+import 'prices.dart';
 import 'settings.dart';
 import 'theme.dart';
 
@@ -627,6 +628,8 @@ class _LokalPageState extends State<LokalPage> {
       sectionHead('Lokal · Maçlar', 'Süper Lig · ŞL', top: 22),
       _lokalCard(context, lokalAdmin),
       const SizedBox(height: 12),
+      const PriceCard(),
+      const SizedBox(height: 12),
       glassBox(
         r: 22,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -967,7 +970,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.3.1', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.4', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 

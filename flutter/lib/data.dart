@@ -43,6 +43,12 @@ class Donation {
   Donation(this.id, this.title, this.collected, this.target);
 }
 
+class PriceItem {
+  final String name;
+  final double price;
+  PriceItem(this.name, this.price);
+}
+
 class AdminEntry {
   final int id;
   final String name;
@@ -108,6 +114,7 @@ class AppState extends ChangeNotifier {
   Map<String, bool> locks = {};
   Map<String, String> settings = {};
   List<Donation> donations = [];
+  List<PriceItem> prices = [];
   List<MatchItem> matches = [];
   Set<String> turkishTeams = {};
   bool matchesLoading = true;
@@ -151,6 +158,20 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> savePrices(List<PriceItem> items) async {
+    try {
+      await Backend.rpc('price_replace', {
+        'p_pin': pin,
+        'p_items': [for (final i in items) {'name': i.name, 'price': i.price}],
+      });
+      prices = items.where((i) => i.name.trim().isNotEmpty).toList();
+      notifyListeners();
+    } catch (e) {
+      _auth(e);
+      rethrow;
+    }
+  }
+
   Future<void> saveDonation(int? id, String title, double collected, double target) async {
     await Backend.rpc('donation_save',
         {'p_pin': pin, 'p_id': id, 'p_title': title, 'p_collected': collected, 'p_target': target});
@@ -165,7 +186,7 @@ class AppState extends ChangeNotifier {
   // UI-Zustand
   int? openTab;
   String? compose;
-  bool showAdmin = false, showManage = false, showInfoEdit = false, showQibla = false, showSettings = false;
+  bool showAdmin = false, showManage = false, showInfoEdit = false, showQibla = false, showSettings = false, showPriceEdit = false;
 
   Future<void> init() async {
     prefs = await SharedPreferences.getInstance();
@@ -254,6 +275,8 @@ class AppState extends ChangeNotifier {
                 (x['target'] as num).toDouble()))
             .toList();
         onSettings?.call();
+        final pr = await Backend.get('price_items?select=name,price,sort&order=sort.asc,id.asc') as List;
+        prices = pr.map((x) => PriceItem(x['name'] as String, (x['price'] as num).toDouble())).toList();
       } catch (_) {}
       loaded = true;
       if (seenCami < 0) markSeen('cami');

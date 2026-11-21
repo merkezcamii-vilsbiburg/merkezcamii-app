@@ -10,6 +10,7 @@ import 'extras.dart';
 import 'islamic.dart';
 import 'notify.dart';
 import 'pages.dart';
+import 'prices.dart';
 import 'settings.dart';
 import 'theme.dart';
 
@@ -157,7 +158,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final overlayOpen = app.compose != null || app.showAdmin || app.showManage || app.showInfoEdit || app.showQibla || app.showSettings;
+    final overlayOpen = app.compose != null || app.showAdmin || app.showManage || app.showInfoEdit || app.showQibla || app.showSettings || app.showPriceEdit;
     return PopScope(
       canPop: tab == 0 && !overlayOpen,
       onPopInvokedWithResult: (didPop, _) {
@@ -190,6 +191,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           Positioned.fill(
             child: InfoEditScreen(onClose: () {
               app.showInfoEdit = false;
+              app.ui();
+            }),
+          ),
+        if (app.showPriceEdit)
+          Positioned.fill(
+            child: PriceEditScreen(onClose: () {
+              app.showPriceEdit = false;
               app.ui();
             }),
           ),
