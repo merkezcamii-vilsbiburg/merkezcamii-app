@@ -68,6 +68,12 @@ def android():
     write(gradle, g)
     shutil.copy(os.path.join(os.path.dirname(ROOT), "app", "demo.keystore"), os.path.join(a, "demo.keystore"))
 
+    # Lint-Prüfung der Plugins im Release abschalten (stürzt bei einigen Plugins ab)
+    root_gradle = os.path.join(ROOT, "android", "build.gradle.kts")
+    rg = read(root_gradle)
+    rg += '\nsubprojects {\n    tasks.matching { it.name.startsWith("lintVital") }.configureEach { enabled = false }\n}\n'
+    write(root_gradle, rg)
+
     # Manifest
     mf = os.path.join(a, "src", "main", "AndroidManifest.xml")
     m = read(mf)
