@@ -296,7 +296,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ]),
 
                     const SizedBox(height: 10),
-                    Text('Merkez Camii Vilsbiburg · Sürüm 1.4', textAlign: TextAlign.center, style: manrope(12, color: muted)),
+                    Text('Merkez Camii Vilsbiburg · Sürüm 1.4.1', textAlign: TextAlign.center, style: manrope(12, color: muted)),
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',

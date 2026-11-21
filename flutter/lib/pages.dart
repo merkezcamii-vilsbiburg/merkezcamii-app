@@ -630,42 +630,6 @@ class _LokalPageState extends State<LokalPage> {
       const SizedBox(height: 12),
       const PriceCard(),
       const SizedBox(height: 12),
-      glassBox(
-        r: 22,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Row(children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: gold.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: line),
-            ),
-            alignment: Alignment.center,
-            child: icon(Ic.ball, size: 24, color: gold),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(
-                lokalAdmin
-                    ? 'Yönetici: kilide dokunarak lokali açın veya kapatın.'
-                    : 'Maçları gençlerimizle birlikte lokalimizde izliyoruz. Yeşil kilitli maçlarda lokal açık.',
-                style: manrope(13.5, color: muted, height: 1.4),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Row(children: [
-                  Text('🔓 Açık', style: manrope(12, w: 700, color: openGreen)),
-                  const SizedBox(width: 14),
-                  Text('🔒 Kapalı', style: manrope(12, w: 700, color: closedRed)),
-                ]),
-              ),
-            ]),
-          ),
-        ]),
-      ),
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.only(top: 14, bottom: 4),
@@ -970,7 +934,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.4', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.4.1', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 
