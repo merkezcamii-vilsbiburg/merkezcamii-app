@@ -704,7 +704,7 @@ fun HakkimizdaPage() {
                 modifier = Modifier.padding(top = 2.dp)
             )
             Text(
-                "Demo sürümü 0.1",
+                "Demo sürümü 0.2",
                 style = TextStyle(fontFamily = Manrope, fontSize = 11.sp, color = Muted.copy(alpha = 0.5f)),
                 modifier = Modifier.padding(top = 10.dp)
             )

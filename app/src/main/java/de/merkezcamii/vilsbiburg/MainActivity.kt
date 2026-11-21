@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -154,10 +156,12 @@ private fun TabItem(t: Tab, on: Boolean, modifier: Modifier, onClick: () -> Unit
         if (t.icon != null) {
             Icon(t.icon, t.label, tint = content, modifier = Modifier.size(22.dp))
         } else {
+            // Gençlik Kolları logosu (komplett). Ausgewählt: einfarbig dunkel auf Gold.
             Image(
-                painterResource(R.drawable.hilal_icon), t.label,
-                colorFilter = ColorFilter.tint(content),
-                modifier = Modifier.size(22.dp)
+                painterResource(R.drawable.logo_genclik), t.label,
+                contentScale = ContentScale.Fit,
+                colorFilter = if (on) ColorFilter.tint(Bg) else null,
+                modifier = Modifier.fillMaxWidth().height(22.dp)
             )
         }
         Text(
