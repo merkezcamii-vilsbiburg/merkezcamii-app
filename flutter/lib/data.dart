@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'instagram.dart';
+import 'notify.dart' show superTopic;
+
 const supabaseUrl = 'https://eglsbxlvoqbkdqtyeghb.supabase.co';
 const supabaseKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnbHNieGx2b3Fia2RxdHllZ2hiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUyNjU3MjAsImV4cCI6MjExMDg0MTcyMH0.vHiUapBqoaiWNqfUlbyCx6yX3K2QuMx_2Q1PcJ4UhVU';
@@ -18,9 +21,9 @@ class ApiError implements Exception {
 class Ann {
   final int id;
   final String section, title, body;
-  final String? photo, author;
+  final String? photo, author, igStatus;
   final DateTime createdAt;
-  Ann(this.id, this.section, this.title, this.body, this.photo, this.author, this.createdAt);
+  Ann(this.id, this.section, this.title, this.body, this.photo, this.author, this.createdAt, [this.igStatus]);
 }
 
 class Team {
@@ -242,6 +245,7 @@ class AppState extends ChangeNotifier {
       adminRoles = ((o['roles'] as List?) ?? []).map((e) => e.toString()).toSet();
       await prefs.setString('adminName', adminName ?? '');
       await prefs.setStringList('roles', adminRoles.toList());
+      superTopic(adminRoles.contains('super'));
       _adminChecked = true;
     } on ApiError {
       logout();
@@ -264,6 +268,7 @@ class AppState extends ChangeNotifier {
           s(o['photo_url']),
           s(o['author']),
           DateTime.tryParse(o['created_at'] ?? '') ?? DateTime.now(),
+          s(o['ig_status']),
         );
       }).toList();
       locks = {for (final x in l) x['match_id'] as String: x['open'] == true};
@@ -339,10 +344,12 @@ class AppState extends ChangeNotifier {
     await prefs.setString('pin', pin);
     await prefs.setString('adminName', adminName ?? '');
     await prefs.setStringList('roles', adminRoles.toList());
+    superTopic(adminRoles.contains('super'));
     notifyListeners();
   }
 
   void logout() {
+    superTopic(false);
     _pin = null;
     adminName = null;
     adminRoles = {};
@@ -356,18 +363,38 @@ class AppState extends ChangeNotifier {
     if (e is ApiError && e.message.toUpperCase().contains('PIN')) logout();
   }
 
-  Future<void> post(String section, String title, String body, Uint8List? photo) async {
+  bool get instagramReady => setting('ig_durum').startsWith('Bağlı:');
+
+  Future<void> post(String section, String title, String body, Uint8List? photo, {bool instagram = false}) async {
     try {
       final url = photo == null ? null : await Backend.upload(pin, photo);
+      String? igUrl;
+      if (instagram) {
+        final ig = await instagramImage(photo: photo, section: section, title: title, body: body);
+        igUrl = identical(ig, photo) ? url : await Backend.upload(pin, ig);
+      }
       await Backend.rpc('post_announcement', {
         'p_pin': pin,
         'p_section': section,
         'p_title': title,
         'p_body': body,
         'p_photo_url': url,
+        'p_instagram': instagram,
+        'p_ig_photo_url': igUrl,
       });
       await refresh();
       markSeen(section);
+    } catch (e) {
+      _auth(e);
+      rethrow;
+    }
+  }
+
+  Future<void> igSetToken(String token) async {
+    try {
+      await Backend.rpc('ig_set_token', {'p_pin': pin, 'p_token': token});
+      settings['ig_durum'] = 'kontrol ediliyor…';
+      notifyListeners();
     } catch (e) {
       _auth(e);
       rethrow;

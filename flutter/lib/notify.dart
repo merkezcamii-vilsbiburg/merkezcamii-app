@@ -229,10 +229,12 @@ Future<void> showPush(Map<String, dynamic> d) async {
   try {
     final sp = await SharedPreferences.getInstance();
     await sp.reload();
-    final topic = kind == 'cami' ? 'cami' : 'lokal';
-    if (!(sp.getBool('push_$topic') ?? true)) return;
+    if (kind != 'super') {
+      final topic = kind == 'cami' ? 'cami' : 'lokal';
+      if (!(sp.getBool('push_$topic') ?? true)) return;
+    }
   } catch (_) {}
-  final isCami = kind == 'cami';
+  final isCami = kind == 'cami' || kind == 'super';
   final title = (d['title'] ?? '').toString().isEmpty ? (isCami ? 'Merkez Camii' : 'Gençlik Kolları') : d['title'].toString();
   final body = (d['body'] ?? '').toString();
   StyleInformation style = BigTextStyleInformation(body);
@@ -308,5 +310,21 @@ Future<void> setTopic(String topic, bool on) async {
     } else {
       await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
     }
+  } catch (_) {}
+}
+
+
+/// Nur für den Süper-Admin: Hinweise vom Server (z. B. Instagram-Verbindung)
+Future<void> superTopic(bool on) async {
+  if (!Platform.isAndroid) return;
+  try {
+    final sp = await SharedPreferences.getInstance();
+    if ((sp.getBool('topic_super') ?? false) == on) return;
+    if (on) {
+      await FirebaseMessaging.instance.subscribeToTopic('super');
+    } else {
+      await FirebaseMessaging.instance.unsubscribeFromTopic('super');
+    }
+    await sp.setBool('topic_super', on);
   } catch (_) {}
 }

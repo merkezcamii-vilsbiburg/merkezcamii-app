@@ -539,7 +539,10 @@ class _AnnDetailScreenState extends State<AnnDetailScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 24),
                   child: Row(children: [
-                    Expanded(child: Text('Yayınlayan: ${a.author ?? '-'}', style: manrope(13, color: muted))),
+                    Expanded(
+                        child: Text(
+                            'Yayınlayan: ${a.author ?? '-'}${a.igStatus == null ? '' : '\nInstagram: ${a.igStatus}'}',
+                            style: manrope(13, color: muted))),
                     GestureDetector(
                       onTap: () async {
                         if (!confirm) {
@@ -1062,7 +1065,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.6', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.7', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 

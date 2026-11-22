@@ -160,6 +160,8 @@ class _AdminGateState extends State<AdminGate> {
             widget.onClose();
           }),
           const SizedBox(height: 12),
+          smallGoldButton('📷  Instagram bağlantısı', () => showDialog(context: context, builder: (_) => const InstagramDialog())),
+          const SizedBox(height: 12),
         ],
         smallGoldButton('Tamam', widget.onClose),
         const SizedBox(height: 12),
@@ -225,6 +227,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   final body = TextEditingController();
   Uint8List? photo;
   bool busy = false, done = false;
+  late bool insta = widget.section == 'cami';
   String? error;
 
   Future<void> pick() async {
@@ -304,6 +307,38 @@ class _ComposeScreenState extends State<ComposeScreen> {
               ]),
             ),
           ),
+        if (app.instagramReady) ...[
+          const SizedBox(height: 14),
+          GestureDetector(
+            onTap: () => setState(() => insta = !insta),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: glass(r: 20, elevated: false),
+              child: Row(children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(9),
+                    gradient: insta ? goldGradient : null,
+                    border: Border.all(color: gold, width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: insta ? const Text('✓', style: TextStyle(fontSize: 19, color: bg, fontWeight: FontWeight.bold)) : null,
+                ),
+                const SizedBox(width: 14),
+                Expanded(child: Text('Instagram\'da da paylaş', style: manrope(18, w: 700))),
+              ]),
+            ),
+          ),
+          if (insta && photo == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, left: 6, right: 6),
+              child: Text('Fotoğraf yok: Instagram için cami tasarımında bir görsel otomatik hazırlanır.',
+                  style: manrope(14, color: muted)),
+            ),
+        ],
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(top: 14),
@@ -321,7 +356,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
             t = first.length > 60 ? first.substring(0, 60) : first;
           }
           try {
-            await app.post(widget.section, t, body.text.trim(), photo);
+            await app.post(widget.section, t, body.text.trim(), photo, instagram: app.instagramReady && insta);
             setState(() => done = true);
             await Future.delayed(const Duration(milliseconds: 1600));
             widget.onClose();
@@ -499,4 +534,81 @@ class _ManageScreenState extends State<ManageScreen> {
         }),
         const SizedBox(height: 40),
       ]);
+}
+
+
+// ================================================================ Instagram-Verbindung (nur Kerim)
+
+class InstagramDialog extends StatefulWidget {
+  const InstagramDialog({super.key});
+  @override
+  State<InstagramDialog> createState() => _InstagramDialogState();
+}
+
+class _InstagramDialogState extends State<InstagramDialog> {
+  final token = TextEditingController();
+  bool busy = false;
+  String? msg;
+
+  @override
+  Widget build(BuildContext context) {
+    final durum = app.setting('ig_durum');
+    return AlertDialog(
+      backgroundColor: bg2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: line)),
+      title: Text('Instagram bağlantısı', style: marcellus(24, color: gold)),
+      content: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Durum: ${durum.isEmpty ? 'Bağlı değil' : durum}',
+              style: manrope(16, w: 700, color: durum.startsWith('Bağlı:') ? openGreen : textC)),
+          const SizedBox(height: 16),
+          Text('Yeni token (Meta geliştirici sayfasından):', style: manrope(14, color: muted)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: token,
+            minLines: 2,
+            maxLines: 4,
+            style: manrope(14),
+            decoration: InputDecoration(
+              hintText: 'IGAA…',
+              hintStyle: manrope(14, color: muted),
+              filled: true,
+              fillColor: bg,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: line)),
+            ),
+          ),
+          if (msg != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(msg!, style: manrope(14, w: 600, color: gold))),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text('Kapat', style: manrope(16, color: muted))),
+        TextButton(
+          onPressed: busy
+              ? null
+              : () async {
+                  if (token.text.trim().isEmpty) {
+                    // Nur Status neu laden
+                    await app.refresh();
+                    if (mounted) setState(() {});
+                    return;
+                  }
+                  setState(() => busy = true);
+                  try {
+                    await app.igSetToken(token.text.trim());
+                    token.clear();
+                    msg = 'Kaydedildi. Birkaç saniye içinde durum güncellenir.';
+                    await Future.delayed(const Duration(seconds: 5));
+                    await app.refresh();
+                  } on ApiError catch (e) {
+                    msg = e.message;
+                  } catch (_) {
+                    msg = 'İnternet bağlantınızı kontrol edin.';
+                  }
+                  if (mounted) setState(() => busy = false);
+                },
+          child: Text(busy ? '…' : 'KAYDET / YENİLE', style: manrope(16, w: 800, color: gold)),
+        ),
+      ],
+    );
+  }
 }
