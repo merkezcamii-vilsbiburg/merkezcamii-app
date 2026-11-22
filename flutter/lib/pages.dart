@@ -110,19 +110,19 @@ class _VakitlerPageState extends State<VakitlerPage> {
         padding: const EdgeInsets.only(top: 10),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [qiblaIconButton(), gearButton()]),
       ),
-      FadeUp(child: Text('بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', textAlign: TextAlign.center, style: amiri(21))),
+      FadeUp(child: Text('بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', textAlign: TextAlign.center, style: amiri(18))),
+      const SizedBox(height: 6),
+      const Center(child: FractionallySizedBox(widthFactor: 0.40, child: AnimatedLogo(t: 10000))),
       const SizedBox(height: 8),
-      const Center(child: FractionallySizedBox(widthFactor: 0.48, child: AnimatedLogo(t: 10000))),
-      const SizedBox(height: 10),
-      Text('Muslimgemeinde Vilsbiburg e.V.', textAlign: TextAlign.center, style: marcellus(19, ls: 1)),
+      Text('Muslimgemeinde Vilsbiburg e.V.', textAlign: TextAlign.center, style: marcellus(17, ls: 1)),
       Padding(
         padding: const EdgeInsets.only(top: 4),
-        child: Text('Camimize hoş geldiniz', textAlign: TextAlign.center, style: manrope(14, color: muted)),
+        child: Text('Camimize hoş geldiniz', textAlign: TextAlign.center, style: manrope(13, color: muted)),
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: 10),
       Center(child: goldDivider()),
       nextHolyDayLine(),
-      const SizedBox(height: 18),
+      const SizedBox(height: 14),
       holyBanner(),
       ramazanCard(),
       FadeUp(
@@ -130,7 +130,7 @@ class _VakitlerPageState extends State<VakitlerPage> {
         child: glassBox(
           child: Column(children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(22, 22, 22, 16),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
               child: Column(children: [
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   const _PulseDot(),
@@ -139,7 +139,7 @@ class _VakitlerPageState extends State<VakitlerPage> {
                 ]),
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text('$label · ${Prayer.hm(nextT)}', style: marcellus(25)),
+                  child: Text('$label · ${Prayer.hm(nextT)}', style: marcellus(21)),
                 ),
                 ShaderMask(
                   shaderCallback: (r) => const LinearGradient(
@@ -148,10 +148,10 @@ class _VakitlerPageState extends State<VakitlerPage> {
                     colors: [Colors.white, Colors.white, gold],
                   ).createShader(r),
                   child: Text(clock,
-                      style: manrope(52, w: 700, color: Colors.white, ls: 1)
+                      style: manrope(42, w: 700, color: Colors.white, ls: 1)
                           .copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 4),
                 Row(children: [
                   Expanded(child: Text(Prayer.miladi(b), style: manrope(12, color: muted))),
                   Text(Prayer.hicri(b), style: manrope(12, color: muted)),
@@ -196,14 +196,14 @@ class _VakitlerPageState extends State<VakitlerPage> {
               : null,
           color: active ? null : bg.withValues(alpha: 0.55),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 13),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(children: [
-          icon(Ic.prayer[k]!, size: 18, color: gold.withValues(alpha: 0.75)),
+          icon(Ic.prayer[k]!, size: 16, color: gold.withValues(alpha: 0.75)),
           Padding(
-            padding: const EdgeInsets.only(top: 3),
-            child: Text(Prayer.names[k]!, style: manrope(12, w: 600, color: active ? gold : muted)),
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(Prayer.names[k]!, style: manrope(11.5, w: 600, color: active ? gold : muted)),
           ),
-          Text(Prayer.hm(today[k]!), style: manrope(19, w: 700)),
+          Text(Prayer.hm(today[k]!), style: manrope(17, w: 700)),
         ]),
       ),
     );
@@ -933,7 +933,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.4.2', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.4.3', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 
