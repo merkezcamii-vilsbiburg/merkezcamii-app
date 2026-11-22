@@ -87,7 +87,13 @@ class _PriceCardState extends State<PriceCard> {
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       decoration: BoxDecoration(gradient: goldGradient, borderRadius: BorderRadius.circular(14)),
                       alignment: Alignment.center,
-                      child: Text(printing ? '…' : '🖨  Yazdır', style: manrope(15, w: 800, color: bg)),
+                      child: printing
+                          ? Text('…', style: manrope(15, w: 800, color: bg))
+                          : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              icon(Ic.printer, size: 18, color: bg),
+                              const SizedBox(width: 8),
+                              Text('Yazdır', style: manrope(15, w: 800, color: bg)),
+                            ]),
                     ),
                   ),
                 ),
@@ -103,7 +109,11 @@ class _PriceCardState extends State<PriceCard> {
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: gold)),
                         alignment: Alignment.center,
-                        child: Text('✎  Düzenle', style: manrope(15, w: 800, color: gold)),
+                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          icon(Ic.pen, size: 16, color: gold),
+                          const SizedBox(width: 8),
+                          Text('Düzenle', style: manrope(15, w: 800, color: gold)),
+                        ]),
                       ),
                     ),
                   ),

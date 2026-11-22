@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import 'brand.dart';
+import 'daily.dart';
 import 'data.dart';
 import 'extras.dart';
 import 'notify.dart';
@@ -178,6 +179,7 @@ class _VakitlerPageState extends State<VakitlerPage> {
         child: Text('Vilsbiburg için otomatik hesaplanır · Diyanet takviminden 1–2 dk farklı olabilir',
             textAlign: TextAlign.center, style: manrope(11.5, color: muted)),
       ),
+      const DailyCards(),
     ]);
   }
 
@@ -933,7 +935,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.4.3', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.5', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 
