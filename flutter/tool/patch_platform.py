@@ -85,6 +85,8 @@ def android():
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 """
     m = must_sub(r"(<manifest[^>]*>)", r"\1" + perms, m, "manifest perms")
     m = must_sub(r'android:label="[^"]*"', 'android:label="Merkez Camii"', m, "label")
@@ -101,6 +103,14 @@ def android():
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
+        <receiver android:exported="false" android:name=".EzanAlarmReceiver" />
+        <receiver android:exported="false" android:name=".EzanBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
+        <service android:exported="false" android:name=".EzanService" android:foregroundServiceType="mediaPlayback" />
     </application>"""
     m = must_sub(r"\s*</application>", receivers, m, "receivers")
     m = re.sub(r'android:screenOrientation="[^"]*"', "", m)
@@ -114,6 +124,17 @@ def android():
 </manifest>"""
         m = re.sub(r"</manifest>\s*$", q, m)
     write(mf, m)
+
+    # Eigener Kotlin-Code: Ezan im Lautlos-Modus (Alarm-Ton)
+    kt_dir = None
+    for dp, _, fs in os.walk(os.path.join(a, "src", "main", "kotlin")):
+        if "MainActivity.kt" in fs:
+            kt_dir = dp
+    if kt_dir is None:
+        print("MainActivity.kt nicht gefunden")
+        sys.exit(1)
+    for f in os.listdir(os.path.join(ROOT, "native_android")):
+        shutil.copy(os.path.join(ROOT, "native_android", f), os.path.join(kt_dir, f))
 
     # Ressourcen aus der bisherigen App
     res = os.path.join(a, "src", "main", "res")

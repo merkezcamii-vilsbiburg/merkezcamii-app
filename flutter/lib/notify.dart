@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -104,6 +106,9 @@ Future<void> scheduleEzans() async {
   final now = DateTime.now().toUtc();
   final today = Prayer.nowBerlin();
   final silentToo = EzanSettings.silentToo(p);
+  // Android + „Sessiz modda da ezan oku“: Ezan als Weckalarm (eigener Dienst), nicht als Benachrichtigungston
+  final nativeAlarm = Platform.isAndroid && silentToo;
+  final alarms = <Map<String, Object>>[];
   var id = 1000;
   for (var d = 0; d < days; d++) {
     final day = tz.TZDateTime(Prayer.berlin, today.year, today.month, today.day).add(Duration(days: d));
@@ -116,6 +121,15 @@ Future<void> scheduleEzans() async {
       final name = EzanSettings.labels[k]!;
       final sabah = k == 'imsak';
       NotificationDetails details;
+      if (mode == 'ezan' && nativeAlarm) {
+        alarms.add({
+          'at': when.millisecondsSinceEpoch,
+          'sabah': sabah,
+          'title': '$name ezanı',
+          'body': '$name vakti girdi · Merkez Camii Vilsbiburg',
+        });
+        continue;
+      }
       if (mode == 'ezan') {
         final ch = _ezanChannel(sabah, silentToo);
         details = NotificationDetails(
@@ -168,6 +182,24 @@ Future<void> scheduleEzans() async {
     }
   }
   await _scheduleHolyDays();
+  if (Platform.isAndroid) {
+    try {
+      await _ezanNative.invokeMethod('schedule', {'json': jsonEncode(alarms)});
+    } catch (e) {
+      debugPrint('ezan alarm: $e');
+    }
+  }
+}
+
+const _ezanNative = MethodChannel('merkezcamii/ezan');
+
+/// Spielt den Ezan sofort über den Alarm-Kanal (Test im Lautlos-Modus)
+Future<void> testSilentEzan() async {
+  try {
+    await _ezanNative.invokeMethod('test');
+  } catch (e) {
+    debugPrint('ezan test: $e');
+  }
 }
 
 /// Bayram (09:00) und Kandil (Akşam) – automatisch jedes Jahr.

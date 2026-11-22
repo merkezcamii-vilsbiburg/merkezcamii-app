@@ -257,6 +257,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Container(margin: const EdgeInsets.symmetric(vertical: 6), height: 1, color: line),
                       _toggle('Sessiz modda da ezan oku', 'Kapalıyken telefon sessizdeyse sadece bildirim gelir',
                           EzanSettings.silentToo(p), (v) => _set('silentToo', v)),
+                      if (Platform.isAndroid && EzanSettings.silentToo(p))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 10),
+                          child: Row(children: [
+                            Expanded(
+                                child: Text('Telefonu sessize alıp deneyin', style: manrope(14, color: muted))),
+                            GestureDetector(
+                              onTap: () => testSilentEzan(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(14), border: Border.all(color: gold)),
+                                child: Text('Dene', style: manrope(15, w: 800, color: gold)),
+                              ),
+                            ),
+                          ]),
+                        ),
                     ]),
 
                     // 2) Ezan dinle

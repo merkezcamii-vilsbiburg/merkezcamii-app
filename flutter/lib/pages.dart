@@ -1065,7 +1065,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.7', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.8', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 
