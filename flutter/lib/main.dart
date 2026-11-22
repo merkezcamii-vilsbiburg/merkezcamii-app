@@ -158,7 +158,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final overlayOpen = app.compose != null || app.showAdmin || app.showManage || app.showInfoEdit || app.showQibla || app.showSettings || app.showPriceEdit;
+    final overlayOpen = app.compose != null || app.showAdmin || app.showManage || app.showInfoEdit || app.showQibla || app.showSettings || app.showPriceEdit || app.showLokalAnns || app.openAnn != null;
     return PopScope(
       canPop: tab == 0 && !overlayOpen,
       onPopInvokedWithResult: (didPop, _) {
@@ -170,6 +170,24 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           child: AnimatedSwitcher(duration: const Duration(milliseconds: 350), child: _page()),
         ),
         Positioned(left: 0, right: 0, bottom: 0, child: TabBar4(selected: tab, onSelect: _select)),
+        if (app.showLokalAnns)
+          Positioned.fill(
+            child: LokalAnnsScreen(onClose: () {
+              app.showLokalAnns = false;
+              app.ui();
+            }),
+          ),
+        if (app.openAnn != null)
+          Positioned.fill(
+            child: AnnDetailScreen(
+              key: ValueKey(app.openAnn!.id),
+              a: app.openAnn!,
+              onClose: () {
+                app.openAnn = null;
+                app.ui();
+              },
+            ),
+          ),
         if (app.compose != null)
           Positioned.fill(
             child: ComposeScreen(

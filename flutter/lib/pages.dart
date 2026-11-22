@@ -412,8 +412,9 @@ Widget writeButton(String label, VoidCallback onTap) => GestureDetector(
       ),
     );
 
-List<Widget> annList(String section) {
-  final list = app.list(section);
+List<Widget> annList(String section, {int? limit}) {
+  var list = app.list(section);
+  if (limit != null && list.length > limit) list = list.sublist(0, limit);
   return [
     if (!app.loaded) emptyNote('Yükleniyor…'),
     if (app.loaded && list.isEmpty) emptyNote(section == 'cami' ? 'Henüz duyuru yok.' : 'Henüz gençlik duyurusu yok.'),
@@ -425,58 +426,120 @@ List<Widget> annList(String section) {
   ];
 }
 
-class AnnCard extends StatefulWidget {
+/// Kurze Duyuru-Karte: Foto, fetter Titel, 2 Zeilen Text. Antippen öffnet die Duyuru.
+class AnnCard extends StatelessWidget {
   final Ann a;
-  const AnnCard({super.key, required this.a});
+  final VoidCallback? onTap;
+  const AnnCard({super.key, required this.a, this.onTap});
+
   @override
-  State<AnnCard> createState() => _AnnCardState();
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap ??
+            () {
+              app.openAnn = a;
+              app.ui();
+            },
+        child: glassBox(
+          r: 20,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (a.photo != null)
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.network(a.photo!, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: Colors.white.withValues(alpha: 0.04))),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(Prayer.upperTr(whenText(a.createdAt)), style: manrope(10.5, w: 700, color: gold, ls: 1.5)),
+                    if (a.title.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(a.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: manrope(17, w: 800)),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Text(a.body,
+                          maxLines: 2, overflow: TextOverflow.ellipsis, style: manrope(14, color: muted, height: 1.4)),
+                    ),
+                  ]),
+                ),
+                const SizedBox(width: 10),
+                Text('›', style: manrope(26, color: gold.withValues(alpha: 0.8))),
+              ]),
+            ),
+          ]),
+        ),
+      );
 }
 
-class _AnnCardState extends State<AnnCard> {
+/// Ganze Duyuru (Vollbild)
+class AnnDetailScreen extends StatefulWidget {
+  final Ann a;
+  final VoidCallback onClose;
+  const AnnDetailScreen({super.key, required this.a, required this.onClose});
+  @override
+  State<AnnDetailScreen> createState() => _AnnDetailScreenState();
+}
+
+class _AnnDetailScreenState extends State<AnnDetailScreen> {
   bool confirm = false;
   @override
   Widget build(BuildContext context) {
     final a = widget.a;
-    return glassBox(
-      r: 20,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        if (a.photo != null)
-          AspectRatio(
-            aspectRatio: 16 / 10,
-            child: Image.network(a.photo!, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: Colors.white.withValues(alpha: 0.04))),
-          ),
-        Stack(children: [
-          Positioned(
-            top: 18,
-            left: 0,
-            child: Container(
-              width: 3,
-              height: 60,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(3),
-                gradient: const LinearGradient(
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [gold, Colors.transparent]),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 18, 16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(Prayer.upperTr(whenText(a.createdAt)), style: manrope(11, w: 700, color: gold, ls: 1.6)),
-              if (a.title.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 5, bottom: 4),
-                  child: Text(a.title, style: manrope(17, w: 700)),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) widget.onClose();
+      },
+      child: Material(
+        color: bg,
+        child: Stack(children: [
+          const Positioned.fill(child: BrandBackground()),
+          SafeArea(
+            child: ListView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 40), children: [
+              Row(children: [
+                Expanded(
+                  child: Text(a.section == 'cami' ? 'Duyuru' : 'Gençlik duyurusu', style: marcellus(22)),
                 ),
-              Text(a.body, style: manrope(15, color: muted, height: 1.45)),
+                GestureDetector(
+                  onTap: widget.onClose,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: line)),
+                    alignment: Alignment.center,
+                    child: const Text('✕', style: TextStyle(fontSize: 18, color: textC)),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 16),
+              if (a.photo != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: InteractiveViewer(
+                    maxScale: 4,
+                    child: Image.network(a.photo!, fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 18),
+                child: Text(Prayer.upperTr(whenText(a.createdAt)), style: manrope(11, w: 700, color: gold, ls: 1.6)),
+              ),
+              if (a.title.isNotEmpty)
+                Padding(padding: const EdgeInsets.only(top: 6), child: Text(a.title, style: manrope(22, w: 800))),
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: SelectableText(a.body, style: manrope(16, color: textC.withValues(alpha: 0.88), height: 1.55)),
+              ),
               if (app.isAdmin(a.section))
                 Padding(
-                  padding: const EdgeInsets.only(top: 10),
+                  padding: const EdgeInsets.only(top: 24),
                   child: Row(children: [
-                    Expanded(
-                        child: Text('Yayınlayan: ${a.author ?? '-'}',
-                            style: manrope(12, color: muted.withValues(alpha: 0.7)))),
+                    Expanded(child: Text('Yayınlayan: ${a.author ?? '-'}', style: manrope(13, color: muted))),
                     GestureDetector(
                       onTap: () async {
                         if (!confirm) {
@@ -485,14 +548,17 @@ class _AnnCardState extends State<AnnCard> {
                         }
                         try {
                           await app.delete(a);
+                          widget.onClose();
                         } catch (e) {
                           if (context.mounted) toast(context, 'Silinemedi: $e');
+                          if (mounted) setState(() => confirm = false);
                         }
-                        if (mounted) setState(() => confirm = false);
                       },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        child: Text(confirm ? 'Emin misiniz? SİL' : 'Sil', style: manrope(13, w: 700, color: closedRed)),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14), border: Border.all(color: closedRed.withValues(alpha: 0.5))),
+                        child: Text(confirm ? 'Emin misiniz? SİL' : 'Sil', style: manrope(14, w: 700, color: closedRed)),
                       ),
                     ),
                   ]),
@@ -500,9 +566,57 @@ class _AnnCardState extends State<AnnCard> {
             ]),
           ),
         ]),
-      ]),
+      ),
     );
   }
+}
+
+/// Alle Gençlik-Duyurular (aus der Lokal-Seite geöffnet)
+class LokalAnnsScreen extends StatelessWidget {
+  final VoidCallback onClose;
+  const LokalAnnsScreen({super.key, required this.onClose});
+  @override
+  Widget build(BuildContext context) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) onClose();
+        },
+        child: Material(
+          color: bg,
+          child: Stack(children: [
+            const Positioned.fill(child: BrandBackground()),
+            SafeArea(
+              child: ListenableBuilder(
+                listenable: app,
+                builder: (_, __) => ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 40), children: [
+                  Row(children: [
+                    Expanded(child: Text('Gençlik duyuruları', style: marcellus(24))),
+                    GestureDetector(
+                      onTap: onClose,
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: line)),
+                        alignment: Alignment.center,
+                        child: const Text('✕', style: TextStyle(fontSize: 18, color: textC)),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 16),
+                  if (app.isAdmin('lokal')) ...[
+                    writeButton('Gençlik duyurusu yaz', () {
+                      app.compose = 'lokal';
+                      app.ui();
+                    }),
+                    const SizedBox(height: 14),
+                  ],
+                  ...annList('lokal'),
+                ]),
+              ),
+            ),
+          ]),
+        ),
+      );
 }
 
 // ================================================================ 2) Duyurular
@@ -625,7 +739,20 @@ class _LokalPageState extends State<LokalPage> {
         }),
         const SizedBox(height: 14),
       ],
-      ...annList('lokal'),
+      ...annList('lokal', limit: 1),
+      if (app.list('lokal').length > 1)
+        GestureDetector(
+          onTap: () {
+            app.showLokalAnns = true;
+            app.ui();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), border: Border.all(color: line)),
+            alignment: Alignment.center,
+            child: Text('Tüm gençlik duyuruları (${app.list('lokal').length}) ›', style: manrope(14, w: 700, color: gold)),
+          ),
+        ),
       sectionHead('Lokal · Maçlar', 'Süper Lig · ŞL', top: 22),
       _lokalCard(context, lokalAdmin),
       const SizedBox(height: 12),
@@ -935,7 +1062,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.5', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.6', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 
