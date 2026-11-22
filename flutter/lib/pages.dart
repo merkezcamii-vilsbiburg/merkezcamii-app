@@ -108,20 +108,21 @@ class _VakitlerPageState extends State<VakitlerPage> {
     return PageList(children: [
       Padding(
         padding: const EdgeInsets.only(top: 10),
-        child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [gearButton()]),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [qiblaIconButton(), gearButton()]),
       ),
       FadeUp(child: Text('بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ', textAlign: TextAlign.center, style: amiri(21))),
-      const SizedBox(height: 14),
-      const Center(child: FractionallySizedBox(widthFactor: 0.66, child: AnimatedLogo(t: 10000))),
-      const SizedBox(height: 16),
+      const SizedBox(height: 8),
+      const Center(child: FractionallySizedBox(widthFactor: 0.48, child: AnimatedLogo(t: 10000))),
+      const SizedBox(height: 10),
       Text('Muslimgemeinde Vilsbiburg e.V.', textAlign: TextAlign.center, style: marcellus(19, ls: 1)),
       Padding(
         padding: const EdgeInsets.only(top: 4),
         child: Text('Camimize hoş geldiniz', textAlign: TextAlign.center, style: manrope(14, color: muted)),
       ),
-      const SizedBox(height: 14),
+      const SizedBox(height: 12),
       Center(child: goldDivider()),
-      const SizedBox(height: 24),
+      nextHolyDayLine(),
+      const SizedBox(height: 18),
       holyBanner(),
       ramazanCard(),
       FadeUp(
@@ -177,8 +178,6 @@ class _VakitlerPageState extends State<VakitlerPage> {
         child: Text('Vilsbiburg için otomatik hesaplanır · Diyanet takviminden 1–2 dk farklı olabilir',
             textAlign: TextAlign.center, style: manrope(11.5, color: muted)),
       ),
-      nextHolyDayLine(),
-      qiblaButton(),
     ]);
   }
 
@@ -934,7 +933,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
         child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
             textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
       ),
-      Text('Sürüm 1.4.1', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+      Text('Sürüm 1.4.2', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
     ]);
   }
 

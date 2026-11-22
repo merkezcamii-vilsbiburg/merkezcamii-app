@@ -149,6 +149,25 @@ double qiblaBearing() {
   return (m.atan2(y, x) * 180 / m.pi + 360) % 360;
 }
 
+/// Pusula oben links (gleicher Stil wie das Zahnrad)
+Widget qiblaIconButton() => GestureDetector(
+      onTap: () {
+        app.showQibla = true;
+        app.ui();
+      },
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.04),
+          border: Border.all(color: line),
+        ),
+        alignment: Alignment.center,
+        child: icon(Ic.compass, size: 22, color: textC.withValues(alpha: 0.85)),
+      ),
+    );
+
 Widget qiblaButton() => GestureDetector(
       onTap: () {
         app.showQibla = true;
