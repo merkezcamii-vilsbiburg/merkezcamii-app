@@ -9,6 +9,7 @@ import 'data.dart';
 import 'pages.dart';
 import 'prayer.dart';
 import 'theme.dart';
+import 'turkce.dart';
 
 Widget bigButton(String text, {bool enabled = true, required VoidCallback onTap}) => GestureDetector(
       onTap: enabled ? onTap : null,
@@ -229,6 +230,7 @@ class _ComposeScreenState extends State<ComposeScreen> {
   bool busy = false, done = false;
   late bool insta = widget.section == 'cami';
   String? error;
+  List<String>? undo; // [Titel, Text] vor der Korrektur
 
   Future<void> pick() async {
     try {
@@ -272,6 +274,49 @@ class _ComposeScreenState extends State<ComposeScreen> {
         const SizedBox(height: 16),
         fieldLabel('Duyuru'),
         bigField(body, 'Duyurunuzu yazın…', minLines: 6, maxLines: null, onChanged: (_) => setState(() {})),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: (title.text.trim().isEmpty && body.text.trim().isEmpty)
+                  ? null
+                  : () async {
+                      final before = [title.text, body.text];
+                      final t = await Turkce.duzelt(title.text);
+                      final b = await Turkce.duzelt(body.text);
+                      setState(() {
+                        undo = (t == before[0] && b == before[1]) ? null : before;
+                        title.text = t;
+                        body.text = b;
+                      });
+                      if (undo == null && context.mounted) toast(context, 'Düzeltilecek harf bulunamadı');
+                    },
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: gold)),
+                alignment: Alignment.center,
+                child: Text('✨  Türkçeye düzelt', style: manrope(16, w: 800, color: gold)),
+              ),
+            ),
+          ),
+          if (undo != null) ...[
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: () => setState(() {
+                title.text = undo![0];
+                body.text = undo![1];
+                undo = null;
+              }),
+              child: Container(
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+                alignment: Alignment.center,
+                child: Text('↶ Geri al', style: manrope(16, w: 700, color: muted)),
+              ),
+            ),
+          ],
+        ]),
         const SizedBox(height: 16),
         if (photo != null)
           ClipRRect(

@@ -8,6 +8,7 @@ import 'brand.dart';
 import 'data.dart';
 import 'extras.dart';
 import 'islamic.dart';
+import 'lokal_konum.dart';
 import 'notify.dart';
 import 'pages.dart';
 import 'prices.dart';
@@ -99,7 +100,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     app.addListener(_onApp);
-    app.refresh();
+    app.refresh().then((_) {
+      if (mounted) Future.delayed(const Duration(seconds: 3), () => mounted ? checkLokalArrival(context) : null);
+    });
     app.refreshMatches();
     t1 = Timer.periodic(const Duration(seconds: 30), (_) => app.refresh());
     t2 = Timer.periodic(const Duration(minutes: 2), (_) => app.refreshMatches());
@@ -119,7 +122,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState s) {
     if (s == AppLifecycleState.resumed) {
-      app.refresh();
+      app.refresh().then((_) {
+        if (mounted) checkLokalArrival(context);
+      });
       scheduleEzans();
     }
   }

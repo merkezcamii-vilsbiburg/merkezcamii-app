@@ -85,6 +85,8 @@ def android():
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 """
@@ -186,7 +188,7 @@ def ios():
     p = read(plist)
     p = re.sub(r"(<key>CFBundleDisplayName</key>\s*<string>)[^<]*(</string>)", r"\1Merkez Camii\2", p)
     if "NSLocationWhenInUseUsageDescription" not in p:
-        p = p.replace("<dict>", "<dict>\n\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>Kıble yönünü göstermek için pusula kullanılır.</string>", 1)
+        p = p.replace("<dict>", "<dict>\n\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>Kıble yönü için ve yöneticilere lokale geldiklerinde lokali açmayı önermek için kullanılır. Konum telefondan dışarı gönderilmez.</string>", 1)
     if "LSApplicationQueriesSchemes" not in p:
         p = p.replace("<dict>", "<dict>\n\t<key>LSApplicationQueriesSchemes</key>\n\t<array>\n\t\t<string>tel</string>\n\t\t<string>mailto</string>\n\t\t<string>https</string>\n\t</array>", 1)
     if "UIBackgroundModes" not in p:

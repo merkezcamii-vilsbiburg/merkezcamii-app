@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'brand.dart';
+import 'lokal_konum.dart';
 import 'notify.dart';
 import 'pages.dart';
 import 'theme.dart';
@@ -291,6 +292,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }),
                     ]),
 
+                    if (app.isAdmin('lokal'))
+                      _section('LOKAL YÖNETİCİSİ', [
+                        _toggle('Lokale gelince sor', 'Lokaldeyken uygulamayı açınca "Lokali açayım mı?" diye sorar',
+                            p.getBool('lokal_konum_sor') ?? false, (v) async {
+                          final err = await setLokalKonum(v);
+                          if (err != null && context.mounted) toast(context, err);
+                          setState(() {});
+                        }),
+                      ]),
+
                     // 5) Hilfe
                     _section('BİLDİRİMLER ÇALIŞMIYORSA', [
                       _helpRow('🔔', 'Bildirim izni', 'Uygulama ayarlarında "Bildirimler"i açın',
@@ -303,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ]),
 
                     const SizedBox(height: 10),
-                    Text('Merkez Camii Vilsbiburg · Sürüm 1.9', textAlign: TextAlign.center, style: manrope(12, color: muted)),
+                    Text('Merkez Camii Vilsbiburg · Sürüm 1.9.1', textAlign: TextAlign.center, style: manrope(12, color: muted)),
                   ]),
           ),
         ]),
