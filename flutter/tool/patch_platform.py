@@ -168,6 +168,7 @@ def android():
     # Eigener Ezan (öğle–yatsı) als Benachrichtigungston
     os.makedirs(os.path.join(res, "raw"), exist_ok=True)
     shutil.copy(os.path.join(ROOT, "assets", "audio", "ezan.mp3"), os.path.join(res, "raw", "ezan.mp3"))
+    shutil.copy(os.path.join(ROOT, "assets", "audio", "ezan_sabah.mp3"), os.path.join(res, "raw", "ezan_sabah.mp3"))
     # Ressourcen, die nur per Name aus Dart benutzt werden, nicht entfernen
     write(os.path.join(res, "raw", "keep.xml"),
           '<?xml version="1.0" encoding="utf-8"?>\n<resources xmlns:tools="http://schemas.android.com/tools" '

@@ -10,12 +10,6 @@ import 'notify.dart';
 import 'pages.dart';
 import 'theme.dart';
 
-/// Ezan-Vorschau (bis eigene Aufnahmen kommen: freesound.org, CC BY)
-const ezanUrls = {
-  'sabah': 'https://cdn.freesound.org/previews/28/28775_5726-hq.mp3',
-  'normal': 'https://cdn.freesound.org/previews/255/255231_4232604-hq.mp3',
-};
-
 /// Zahnrad oben rechts auf der Vakitler-Seite
 Widget gearButton() => GestureDetector(
       onTap: () {
@@ -82,14 +76,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     try {
       await player.stop();
-      if (which == 'normal') {
-        await player.play(AssetSource('audio/ezan.mp3'));
-      } else {
-        await player.play(UrlSource(ezanUrls[which]!));
-      }
+      await player.play(AssetSource(which == 'normal' ? 'audio/ezan.mp3' : 'audio/ezan_sabah.mp3'));
     } catch (_) {
       if (mounted) {
-        toast(context, 'Ezan çalınamadı. İnternet bağlantısını kontrol edin.');
+        toast(context, 'Ezan çalınamadı.');
         setState(() => playing = null);
       }
     }
@@ -313,12 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ]),
 
                     const SizedBox(height: 10),
-                    Text('Merkez Camii Vilsbiburg · Sürüm 1.6', textAlign: TextAlign.center, style: manrope(12, color: muted)),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text('Sabah ezanı kaydı: sazman (freesound.org, CC BY)',
-                          textAlign: TextAlign.center, style: manrope(10.5, color: muted.withValues(alpha: 0.5))),
-                    ),
+                    Text('Merkez Camii Vilsbiburg · Sürüm 1.9', textAlign: TextAlign.center, style: manrope(12, color: muted)),
                   ]),
           ),
         ]),
