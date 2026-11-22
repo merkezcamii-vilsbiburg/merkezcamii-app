@@ -34,7 +34,7 @@ class Daily {
   }
 
   static DailyItem? todayAyet() => ayet.isEmpty ? null : ayet[_day % ayet.length];
-  static DailyItem? todayHadis() => hadis.isEmpty ? null : hadis[(_day * 7) % hadis.length];
+  static DailyItem? todayHadis() => hadis.isEmpty ? null : hadis[(_day + 17) % hadis.length];
 }
 
 class DailyCards extends StatefulWidget {
