@@ -1062,7 +1062,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
       ),
       Padding(
         padding: const EdgeInsets.only(top: 10),
-        child: Text('Sürüm 1.9.1', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+        child: Text('Sürüm 1.9.2', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
       ),
     ]);
   }

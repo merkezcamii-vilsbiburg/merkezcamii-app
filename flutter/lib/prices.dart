@@ -68,8 +68,9 @@ class _PriceCardState extends State<PriceCard> {
                     Text(priceText(items[i].price), style: manrope(15, w: 800, color: gold)),
                   ]),
                 ),
-              const SizedBox(height: 12),
-              Row(children: [
+              // Drucken und Bearbeiten nur für Yöneticiler
+              if (app.adminRoles.isNotEmpty) const SizedBox(height: 12),
+              if (app.adminRoles.isNotEmpty) Row(children: [
                 Expanded(
                   child: GestureDetector(
                     onTap: printing
