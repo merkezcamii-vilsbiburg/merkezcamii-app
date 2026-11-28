@@ -314,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ]),
 
                     const SizedBox(height: 10),
-                    Text('Merkez Camii Vilsbiburg · Sürüm 1.9.2', textAlign: TextAlign.center, style: manrope(12, color: muted)),
+                    Text('Merkez Camii Vilsbiburg · Sürüm 1.9.3', textAlign: TextAlign.center, style: manrope(12, color: muted)),
                   ]),
           ),
         ]),

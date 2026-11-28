@@ -816,7 +816,12 @@ class _LokalPageState extends State<LokalPage> {
     } else {
       sub = '';
     }
-    if (lokalAdmin) sub = sub.isEmpty ? 'Değiştirmek için dokunun' : '$sub · değiştirmek için dokunun';
+    final by = app.lokalBy.trim();
+    if (by.isNotEmpty && by != 'sistem') {
+      final who = '${open ? 'Açan' : 'Kapatan'}: $by';
+      sub = sub.isEmpty ? who : '$who · $sub';
+    }
+    if (lokalAdmin) sub = sub.isEmpty ? 'Değiştirmek için dokunun' : '$sub\nDeğiştirmek için dokunun';
     return GestureDetector(
       onTap: () async {
         if (!lokalAdmin) {
@@ -956,6 +961,15 @@ class MatchRow extends StatelessWidget {
                   alignment: Alignment.center,
                   child: icon(open ? Ic.lockOpen : Ic.lockClosed, size: 22, color: open ? openGreen : closedRed),
                 ),
+                if ((app.lockBy[m.id] ?? '').trim().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(app.lockBy[m.id]!.trim(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: manrope(10, w: 600, color: muted)),
+                  ),
               ]),
             ),
           ),
@@ -1062,7 +1076,7 @@ class _HakkimizdaPageState extends State<HakkimizdaPage> {
       ),
       Padding(
         padding: const EdgeInsets.only(top: 10),
-        child: Text('Sürüm 1.9.2', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
+        child: Text('Sürüm 1.9.3', textAlign: TextAlign.center, style: manrope(11, color: muted.withValues(alpha: 0.5))),
       ),
     ]);
   }

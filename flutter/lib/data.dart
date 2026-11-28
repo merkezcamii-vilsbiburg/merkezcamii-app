@@ -115,7 +115,9 @@ class AppState extends ChangeNotifier {
 
   List<Ann> announcements = [];
   Map<String, bool> locks = {};
+  Map<String, String> lockBy = {}; // wer den Maç-Kilit zuletzt gedrückt hat
   Map<String, String> settings = {};
+  Map<String, String> settingsBy = {}; // wer eine Einstellung zuletzt geändert hat
   List<Donation> donations = [];
   List<PriceItem> prices = [];
   List<MatchItem> matches = [];
@@ -145,16 +147,20 @@ class AppState extends ChangeNotifier {
 
   bool get lokalOpen => setting('lokal_acik') == '1';
   DateTime? get lokalSince => DateTime.tryParse(setting('lokal_since'));
+  String get lokalBy => settingsBy['lokal_acik'] ?? '';
 
   Future<void> setLokalOpen(bool open) async {
     final before = Map<String, String>.from(settings);
+    final beforeBy = Map<String, String>.from(settingsBy);
     settings['lokal_acik'] = open ? '1' : '0';
+    if (adminName != null) settingsBy['lokal_acik'] = adminName!;
     settings['lokal_since'] = DateTime.now().toUtc().toIso8601String();
     notifyListeners();
     try {
       await Backend.rpc('set_lokal_open', {'p_pin': pin, 'p_open': open});
     } catch (e) {
       settings = before;
+      settingsBy = beforeBy;
       notifyListeners();
       _auth(e);
       rethrow;
@@ -257,7 +263,7 @@ class AppState extends ChangeNotifier {
     await _revalidate();
     try {
       final a = await Backend.get('announcements?select=*&deleted=eq.false&order=created_at.desc&limit=60') as List;
-      final l = await Backend.get('match_locks?select=match_id,open') as List;
+      final l = await Backend.get('match_locks?select=match_id,open,updated_by') as List;
       announcements = a.map((o) {
         String? s(dynamic v) => (v == null || v.toString().isEmpty) ? null : v.toString();
         return Ann(
@@ -272,9 +278,11 @@ class AppState extends ChangeNotifier {
         );
       }).toList();
       locks = {for (final x in l) x['match_id'] as String: x['open'] == true};
+      lockBy = {for (final x in l) x['match_id'] as String: (x['updated_by'] ?? '').toString()};
       try {
-        final st = await Backend.get('settings?select=key,value') as List;
+        final st = await Backend.get('settings?select=key,value,updated_by') as List;
         settings = {for (final x in st) x['key'] as String: (x['value'] ?? '').toString()};
+        settingsBy = {for (final x in st) x['key'] as String: (x['updated_by'] ?? '').toString()};
         final dn = await Backend.get('donations?select=id,title,collected,target,sort&order=sort.asc,id.asc') as List;
         donations = dn
             .map((x) => Donation((x['id'] as num).toInt(), x['title'] as String, (x['collected'] as num).toDouble(),
@@ -414,7 +422,9 @@ class AppState extends ChangeNotifier {
 
   Future<void> setLock(MatchItem m, bool open) async {
     final before = locks[m.id] ?? false;
+    final beforeBy = lockBy[m.id];
     locks[m.id] = open;
+    if (adminName != null) lockBy[m.id] = adminName!;
     notifyListeners();
     try {
       await Backend.rpc('set_lock', {
@@ -426,6 +436,11 @@ class AppState extends ChangeNotifier {
       });
     } catch (e) {
       locks[m.id] = before;
+      if (beforeBy == null) {
+        lockBy.remove(m.id);
+      } else {
+        lockBy[m.id] = beforeBy;
+      }
       notifyListeners();
       _auth(e);
       rethrow;
